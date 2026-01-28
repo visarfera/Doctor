@@ -89,7 +89,7 @@
         <!-- DASHBOARD VIEW -->
         <div id="dashboard-view" class="min-h-screen flex flex-col items-center justify-center p-6 pb-20 bg-white">
             <div class="mb-12 text-center">
-                <img src="https://i.imgur.com/D6dqEHI.png" crossorigin="anonymous" alt="Logo" class="w-64 mx-auto mb-8">
+                <img src="https://i.imgur.com/cMRJk4p.png" crossorigin="anonymous" alt="Logo" class="w-64 mx-auto mb-8">
                 <h1 class="text-3xl font-black text-black tracking-tighter mb-2 uppercase">DOCTOR EXTERMINATOR DDD SHPK
                 </h1>
                 <p class="text-gray-500 font-bold text-lg uppercase tracking-widest">Paneli i Kontrollit</p>
@@ -267,9 +267,31 @@
                             class="w-full p-3 bg-gray-50 border-2 border-gray-300 rounded-xl h-24 font-bold text-sm focus:border-black outline-none"></textarea>
                     </div>
                     <div><label class="block text-xs font-black text-black uppercase tracking-widest mb-4">Çmimi
-                            (€)</label><input type="number" id="f-cmimi"
-                            class="w-full p-4 bg-gray-50 border-2 border-black rounded-xl font-black text-xl"
-                            inputmode="decimal" step="0.01"></div>
+                            (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="f-cmimi"
+                                class="flex-1 p-4 bg-gray-50 border-2 border-black rounded-xl font-black text-xl"
+                                inputmode="decimal" step="0.01">
+                            <label
+                                class="flex items-center gap-2 cursor-pointer bg-gray-50 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-black transition-all">
+                                <input type="checkbox" id="f-price-na" class="w-5 h-5 accent-black"
+                                    onchange="togglePriceNA(this.checked)">
+                                <span class="text-xs font-black uppercase select-none">N/A</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div><label class="block text-xs font-black text-black uppercase tracking-widest mb-4">Vlefshmëria
+                            (Garancioni)</label>
+                        <select id="f-validity"
+                            class="w-full p-4 bg-gray-50 border-2 border-black rounded-xl font-black text-lg">
+                            <option value="1 Muaj">1 Muaj</option>
+                            <option value="2 Muaj">2 Muaj</option>
+                            <option value="3 Muaj">3 Muaj</option>
+                            <option value="4 Muaj">4 Muaj</option>
+                            <option value="5 Muaj">5 Muaj</option>
+                            <option value="6 Muaj" selected>6 Muaj</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Signatures -->
@@ -383,8 +405,8 @@
         const UNIT_TYPES = ["LITËR", "ML", "GRAM", "KILOGRAM", "COPË", "KUTIA", "NGJITËS"];
         const FIXED_PREPS = ["DIDECILDIMETHYLAMMONIUM CHLORIDE", "FIPRONIL", "PERMETHRINE", "BRODIFACOUM", "BROMADIOLONE", "CINNAMON OIL"];
         const DEFAULT_NOTE = "Shërbimi u krye sipas standardeve dhe protokolleve ekologjike të kërkuara për trajtimin e hapësirave.";
-        const LOGO_URL = 'https://i.imgur.com/D6dqEHI.png';
-        const STAMP_URL = 'https://i.imgur.com/pp7n6if.png';
+        const LOGO_URL = 'https://i.imgur.com/cMRJk4p.png';
+        const STAMP_URL = 'https://i.imgur.com/0FbFlq8.png';
 
         const CERTS_KEY = 'de_certificates_v1';
         const CLIENTS_KEY = 'de_clients_v1';
@@ -457,6 +479,9 @@
             document.getElementById('f-nr-v').value = getNextNr();
             document.getElementById('f-shenime').value = DEFAULT_NOTE;
             document.getElementById('f-stamp-toggle').checked = true;
+            document.getElementById('f-validity').value = '6 Muaj';
+            document.getElementById('f-price-na').checked = false;
+            document.getElementById('f-cmimi').disabled = false;
             document.querySelectorAll('#app > div').forEach(d => d.classList.add('hidden'));
             document.getElementById('edit-view').classList.remove('hidden');
             setTimeout(initPads, 200);
@@ -471,6 +496,16 @@
             FIXED_PREPS.forEach(p => togglePrepRow(p.replace(/\s/g, '_'), false));
         }
 
+        function togglePriceNA(isNA) {
+            const input = document.getElementById('f-cmimi');
+            if (isNA) {
+                input.disabled = true;
+                input.value = '';
+            } else {
+                input.disabled = false;
+            }
+        }
+
         function saveData() {
             const preps = Array.from(document.querySelectorAll('.prep-check:checked')).map(c => {
                 const sid = c.dataset.name.replace(/\s/g, '_');
@@ -481,6 +516,9 @@
                 const row = input.parentElement;
                 if (input.value.trim()) preps.push({ emri: input.value.toUpperCase(), sasia: row.querySelector('.custom-prep-qty').value, njesia: row.querySelector('.custom-prep-unit').value });
             });
+
+            const priceNA = document.getElementById('f-price-na').checked;
+            const priceValue = priceNA ? 'N/A' : document.getElementById('f-cmimi').value;
 
             const doc = {
                 id: currentId,
@@ -496,7 +534,9 @@
                 tekniku_emri: document.getElementById('f-tekniku-emri').value.toUpperCase(),
                 pranuesi_emri: document.getElementById('f-pranuesi-emri').value.toUpperCase(),
                 shenime: document.getElementById('f-shenime').value,
-                cmimi: document.getElementById('f-cmimi').value,
+                cmimi: priceValue,
+                price_is_na: priceNA,
+                validity: document.getElementById('f-validity').value,
                 sherbimet: Array.from(document.querySelectorAll('.sh-check:checked')).map(c => c.value),
                 pestat: Array.from(document.querySelectorAll('.pest-check:checked')).map(c => c.value),
                 metodat: Array.from(document.querySelectorAll('.metoda-check:checked')).map(c => c.value),
@@ -540,7 +580,8 @@
                 const now = new Date();
                 filtered = filtered.filter(d => {
                     const dDate = new Date(d.data);
-                    return ((now - dDate) / (1000 * 60 * 60 * 24 * 30)) >= 6;
+                    const validityMonths = parseInt(d.validity) || 6;
+                    return ((now - dDate) / (1000 * 60 * 60 * 24 * 30)) >= validityMonths;
                 });
             }
 
@@ -551,10 +592,12 @@
                 return pB.seq - pA.seq;
             });
 
-            document.getElementById('docs-list').innerHTML = filtered.map(d => `
+            document.getElementById('docs-list').innerHTML = filtered.map(d => {
+                const displayPrice = d.price_is_na ? 'N/A' : (d.cmimi ? `${d.cmimi} €` : '-');
+                return `
                 <tr class="border-b hover:bg-gray-50 uppercase text-[11px] font-bold">
                     <td class="p-4"><span class="bg-black text-white px-2 py-1 rounded">${d.nr_v}</span></td>
-                    <td class="p-4">${d.klienti}</td><td class="p-4">${d.data}</td><td class="p-4">${d.cmimi || '-'} €</td>
+                    <td class="p-4">${d.klienti}</td><td class="p-4">${d.data}</td><td class="p-4">${displayPrice}</td>
                     <td class="p-4 text-center">
                         <div class="flex justify-center gap-3">
                             <button onclick="previewDoc(${d.id})" class="text-blue-600 hover:scale-110 transition-transform"><i class="fas fa-file-pdf"></i></button>
@@ -562,15 +605,28 @@
                             <button onclick="deleteDoc(${d.id})" class="text-red-600 hover:scale-110 transition-transform"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
         }
 
         function editDoc(id) {
             const d = db.find(x => x.id === id); if (!d) return;
             currentId = id; clearForm();
-            ['data', 'ora', 'nr_v', 'klienti', 'adresa', 'nui', 'm2', 'tel', 'email', 'tekniku_emri', 'pranuesi_emri', 'shenime', 'cmimi'].forEach(k => {
+            ['data', 'ora', 'nr_v', 'klienti', 'adresa', 'nui', 'm2', 'tel', 'email', 'tekniku_emri', 'pranuesi_emri', 'shenime'].forEach(k => {
                 const el = document.getElementById('f-' + k); if (el) el.value = d[k] || '';
             });
+
+            if (d.price_is_na) {
+                document.getElementById('f-price-na').checked = true;
+                document.getElementById('f-cmimi').disabled = true;
+                document.getElementById('f-cmimi').value = '';
+            } else {
+                document.getElementById('f-price-na').checked = false;
+                document.getElementById('f-cmimi').disabled = false;
+                document.getElementById('f-cmimi').value = d.cmimi || '';
+            }
+
+            document.getElementById('f-validity').value = d.validity || '6 Muaj';
             document.getElementById('f-stamp-toggle').checked = (d.show_stamp !== false);
             d.sherbimet?.forEach(v => { const c = Array.from(document.querySelectorAll('.sh-check')).find(x => x.value === v); if (c) c.checked = true; });
             d.pestat?.forEach(v => { const c = Array.from(document.querySelectorAll('.pest-check')).find(x => x.value === v); if (c) c.checked = true; });
@@ -630,7 +686,10 @@
 
         function updateDashboardCount() {
             const now = new Date();
-            const count = db.filter(d => (now - new Date(d.data)) / (1000 * 60 * 60 * 24 * 30) >= 6).length;
+            const count = db.filter(d => {
+                const validityMonths = parseInt(d.validity) || 6;
+                return (now - new Date(d.data)) / (1000 * 60 * 60 * 24 * 30) >= validityMonths;
+            }).length;
             document.getElementById('dash-expired-count').innerText = count;
         }
 
@@ -694,6 +753,9 @@
             const logo = `<div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_URL}" crossorigin="anonymous" style="width:250px;display:inline-block;"></div>`;
             const stampImg = d.show_stamp !== false ? `<img src="${STAMP_URL}" crossorigin="anonymous" style="width:130px;position:absolute;bottom:130px;left:50%;transform:translateX(-50%);opacity:0.8;z-index:10;pointer-events:none;">` : '';
 
+            const displayPrice = d.price_is_na ? 'N/A' : (d.cmimi ? `${d.cmimi} €` : '-');
+            const validityText = d.validity || '6 Muaj';
+
             const pdfTemplate = `
             <div id="pdf-final" style="width:800px;min-height:1080px;padding:30px;background:white;color:black;font-family:Inter;display:flex;flex-direction:column;justify-content:space-between;border:1px solid #eee;position:relative;">
                 ${stampImg}
@@ -743,7 +805,7 @@
                     </div>
                     <div style="border-top:2px solid black;margin-top:30px;padding-top:10px;text-align:center;font-weight:900;font-size:10px;">
                         <div>NUI 811498957 | RR. MEHMET AKIF ERSOY NR. 17, TASLIXHE II - PRISHTINË | e-mail info@doctorexterminator.com | 044 158 638, 048 158 638</div>
-                        <div style="color:#999;font-style:italic;margin-top:5px;">* Dokument zyrtar | Vlefshmëria: 6 muaj</div>
+                        <div style="color:#999;font-style:italic;margin-top:5px;">* Dokument zyrtar | Vlefshmëria: ${validityText}</div>
                     </div>
                 </div>
             </div>`;
