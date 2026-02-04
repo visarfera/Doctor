@@ -432,7 +432,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, Timestamp, updateDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, Timestamp, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -447,8 +447,6 @@
         const app = initializeApp(firebaseConfig);
         const firestore = getFirestore(app);
         const auth = getAuth(app);
-
-        const ADMIN_EMAILS = ["admin@doctorexterminator.com", "visar@veros.com"];
 
         const SH_TYPES = ["DEZINFEKTIM", "DEZINSEKTIM", "DERATIZIM", "REPELIM", "KONTROLL", "INTERVENIM", "MONITORIMI DHE KONTROLLIMI I DËMTUESVE"];
         const PEST_TYPES = ["BAKTERE/VIRUSE/FUNGJE/SPORE", "FURRTARE", "BUBRRECA", "MUSHKONJA", "MIZA", "GREJZA", "ÇIMKA", "PLESHTA", "SILVERFISH/MILIPIDE", "BREJTËS", "GJARPËRINJË", "PËLLUMBA"];
@@ -964,11 +962,19 @@
             }
         }
 
-        function checkAdminAccess(userEmail) {
-            const isAdmin = ADMIN_EMAILS.includes(userEmail);
+        async function checkAdminAccess(userEmail) {
             const clientMgmtBtn = document.getElementById('btn-client-mgmt');
-            if (clientMgmtBtn) {
+            if (!clientMgmtBtn) return;
+
+            try {
+                const userDocRef = doc(firestore, 'users', userEmail);
+                const userDocSnap = await getDoc(userDocRef);
+
+                const isAdmin = userDocSnap.exists() && userDocSnap.data().roli === 'admin';
                 clientMgmtBtn.style.display = isAdmin ? 'flex' : 'none';
+            } catch (error) {
+                console.error('Error checking admin access:', error);
+                clientMgmtBtn.style.display = 'none';
             }
         }
 
