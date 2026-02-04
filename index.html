@@ -184,9 +184,10 @@
             <div class="overflow-x-auto bg-white rounded-2xl shadow-xl border-2 border-black">
                 <table class="w-full text-left">
                     <tr class="bg-black text-white text-[11px] uppercase font-black tracking-wider">
-                        <th class="p-4">Nr. Vërtetimit</th>
-                        <th class="p-4">Klienti</th>
+                        <th class="p-4">Nr.</th>
                         <th class="p-4">Data</th>
+                        <th class="p-4">Klienti</th>
+                        <th class="p-4">Lëshuar nga</th>
                         <th class="p-4">Çmimi</th>
                         <th class="p-4 text-center">Veprimet</th>
                     </tr>
@@ -625,6 +626,7 @@
                 show_stamp: document.getElementById('f-stamp-toggle').checked,
                 sig_tekniku: padTekniku && !padTekniku.isEmpty() ? padTekniku.toDataURL() : null,
                 sig_klienti: padKlienti && !padKlienti.isEmpty() ? padKlienti.toDataURL() : null,
+                created_by: auth.currentUser ? auth.currentUser.email : 'unknown',
                 timestamp: Timestamp.now(),
                 ts: Date.now()
             };
@@ -703,12 +705,16 @@
                 return pB.seq - pA.seq;
             });
 
-            document.getElementById('docs-list').innerHTML = filtered.map(d => {
+            document.getElementById('docs-list').innerHTML = filtered.map((d, index) => {
                 const displayPrice = d.price_is_na ? 'N/A' : (d.cmimi ? `${d.cmimi} €` : '-');
+                const createdBy = d.created_by || '-';
                 return `
                 <tr class="border-b hover:bg-gray-50 uppercase text-[11px] font-bold">
-                    <td class="p-4"><span class="bg-black text-white px-2 py-1 rounded">${d.nr_v}</span></td>
-                    <td class="p-4">${d.klienti}</td><td class="p-4">${d.data}</td><td class="p-4">${displayPrice}</td>
+                    <td class="p-4"><span class="bg-black text-white px-2 py-1 rounded">${index + 1}</span></td>
+                    <td class="p-4">${d.data}</td>
+                    <td class="p-4">${d.klienti}</td>
+                    <td class="p-4 text-xs lowercase">${createdBy}</td>
+                    <td class="p-4">${displayPrice}</td>
                     <td class="p-4 text-center">
                         <div class="flex justify-center gap-3">
                             <button onclick="previewDoc(${d.id})" class="text-blue-600 hover:scale-110 transition-transform"><i class="fas fa-file-pdf"></i></button>
@@ -917,10 +923,10 @@
                             <div style="display:grid;grid-template-columns:1fr 1fr;font-size:9px;">${PEST_TYPES.map(p => `<div style="display:flex;align-items:center;margin-bottom:1px;"><div style="width:9px;height:9px;border:1px solid black;margin-right:4px;display:flex;align-items:center;justify-content:center;font-size:7px;">${d.pestat.includes(p) ? '✓' : ''}</div><b>${p}</b></div>`).join('')}</div>
                         </div>
                     </div>
-                    <div style="border:2px solid black;border-radius:15px;overflow:hidden;margin-bottom:8px;">
-                        <table style="width:100%;border-collapse:collapse;font-size:11px;">
-                            <tr style="background:black;color:white;font-weight:900;font-size:11px;"><th style="padding:8px;text-align:left;">PREPARATI</th><th style="padding:8px;">NJËSIA</th><th style="padding:8px;">SASIA</th></tr>
-                            ${d.preparatet.map(p => `<tr style="border-top:1px solid #eee;"><td style="padding:5px;font-weight:900;font-size:9px;">${p.emri}</td><td style="padding:5px;text-align:center;font-size:10px;">${p.njesia}</td><td style="padding:5px;text-align:center;font-weight:900;font-size:10px;">${p.sasia}</td></tr>`).join('')}
+                    <div style="border:2px solid black;border-radius:15px;overflow:hidden;margin-bottom:6px;">
+                        <table style="width:100%;border-collapse:collapse;font-size:8px;">
+                            <tr style="background:black;color:white;font-weight:900;font-size:9px;"><th style="padding:5px;text-align:left;">PREPARATI</th><th style="padding:5px;">NJËSIA</th><th style="padding:5px;">SASIA</th></tr>
+                            ${d.preparatet.map(p => `<tr style="border-top:1px solid #eee;"><td style="padding:3px;font-weight:900;font-size:8px;line-height:1.2;">${p.emri}</td><td style="padding:3px;text-align:center;font-size:9px;">${p.njesia}</td><td style="padding:3px;text-align:center;font-weight:900;font-size:9px;">${p.sasia}</td></tr>`).join('')}
                         </table>
                     </div>
                     <div style="border:2px solid black;padding:8px;border-radius:15px;font-weight:900;margin-bottom:8px;display:flex;gap:15px;font-size:10px;">
