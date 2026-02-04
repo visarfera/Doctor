@@ -490,6 +490,7 @@
         let clientsDb = [];
         let currentUserRole = 'user'; // Track current user's role (admin or user)
         let currentId = null;
+        let editingId = null; // Track document being edited
         let padTekniku, padKlienti;
 
         async function loadData() {
@@ -709,6 +710,9 @@
             document.getElementById('docs-list').innerHTML = filtered.map((d, index) => {
                 const displayPrice = d.price_is_na ? 'N/A' : (d.cmimi ? `${d.cmimi} €` : '-');
                 const createdBy = d.created_by || '-';
+                const editButton = currentUserRole === 'admin'
+                    ? `<button onclick="editDoc(${d.id})" class="text-yellow-600 hover:scale-110 transition-transform"><i class="fas fa-edit"></i></button>`
+                    : '';
                 const deleteButton = currentUserRole === 'admin'
                     ? `<button onclick="deleteDoc(${d.id})" class="text-red-600 hover:scale-110 transition-transform"><i class="fas fa-trash"></i></button>`
                     : '';
@@ -722,6 +726,7 @@
                     <td class="p-4 text-center">
                         <div class="flex justify-center gap-3">
                             <button onclick="previewDoc(${d.id})" class="text-blue-600 hover:scale-110 transition-transform"><i class="fas fa-file-pdf"></i></button>
+                            ${editButton}
                             ${deleteButton}
                         </div>
                     </td>
