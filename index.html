@@ -488,6 +488,7 @@
 
         let db = [];
         let clientsDb = [];
+        let currentUserRole = 'user'; // Track current user's role (admin or user)
         let currentId = null;
         let padTekniku, padKlienti;
 
@@ -708,6 +709,9 @@
             document.getElementById('docs-list').innerHTML = filtered.map((d, index) => {
                 const displayPrice = d.price_is_na ? 'N/A' : (d.cmimi ? `${d.cmimi} €` : '-');
                 const createdBy = d.created_by || '-';
+                const deleteButton = currentUserRole === 'admin'
+                    ? `<button onclick="deleteDoc(${d.id})" class="text-red-600 hover:scale-110 transition-transform"><i class="fas fa-trash"></i></button>`
+                    : '';
                 return `
                 <tr class="border-b hover:bg-gray-50 uppercase text-[11px] font-bold">
                     <td class="p-4"><span class="bg-black text-white px-2 py-1 rounded">${index + 1}</span></td>
@@ -719,7 +723,7 @@
                         <div class="flex justify-center gap-3">
                             <button onclick="previewDoc(${d.id})" class="text-blue-600 hover:scale-110 transition-transform"><i class="fas fa-file-pdf"></i></button>
                             <button onclick="editDoc(${d.id})" class="text-amber-600 hover:scale-110 transition-transform"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteDoc(${d.id})" class="text-red-600 hover:scale-110 transition-transform"><i class="fas fa-trash"></i></button>
+                            ${deleteButton}
                         </div>
                     </td>
                 </tr>`;
@@ -1045,9 +1049,11 @@
                 const userDocSnap = await getDoc(userDocRef);
 
                 const isAdmin = userDocSnap.exists() && userDocSnap.data().roli === 'admin';
+                currentUserRole = isAdmin ? 'admin' : 'user'; // Set global role
                 clientMgmtBtn.style.display = isAdmin ? 'flex' : 'none';
             } catch (error) {
                 console.error('Error checking admin access:', error);
+                currentUserRole = 'user'; // Default to user on error
                 clientMgmtBtn.style.display = 'none';
             }
         }
