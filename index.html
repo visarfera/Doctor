@@ -116,7 +116,7 @@
         <div id="dashboard-view"
             class="hidden min-h-screen flex flex-col items-center justify-center p-6 pb-20 bg-white">
             <div class="absolute top-6 right-6 flex items-center gap-3">
-                <button onclick="handleChangePassword()"
+                <button onclick="openPasswordModal()"
                     class="bg-yellow-500 text-black px-6 py-2 rounded-xl font-bold text-sm uppercase shadow-lg border-b-4 border-yellow-600 hover:scale-[1.02] transition-all flex items-center gap-2">
                     <i class="fas fa-key"></i> Fjalëkalimi
                 </button>
@@ -435,10 +435,33 @@
         style="position: absolute; left: -9999px; top: -9999px; width: 800px; background: white; pointer-events: none;">
     </div>
 
+    </div>
+
+    <!-- PASSWORD CHANGE MODAL -->
+    <div id="password-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+        <div class="bg-white rounded-3xl shadow-2xl border-4 border-black p-8 w-full max-w-md">
+            <h2 class="text-2xl font-black uppercase mb-6 text-center">Ndrysho Fjalëkalimin</h2>
+            <div class="space-y-4">
+                <input type="password" id="new-password-input" placeholder="Fjalëkalimi i ri (min. 6 karaktere)"
+                    class="w-full p-4 border-2 border-gray-300 rounded-xl font-bold focus:border-black outline-none">
+                <div class="flex gap-3">
+                    <button onclick="saveNewPassword()"
+                        class="flex-1 bg-green-600 text-white px-6 py-3 rounded-xl font-black uppercase shadow-lg border-b-4 border-green-800 hover:scale-[1.02] transition-all">
+                        Ruaj
+                    </button>
+                    <button onclick="closePasswordModal()"
+                        class="flex-1 bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase shadow-lg border-b-4 border-red-800 hover:scale-[1.02] transition-all">
+                        Anulo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, deleteDoc as deleteFirestoreDoc, doc, query, orderBy, Timestamp, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDF5NmnA6XPkhp4TIgHWlnYXCZ3SIlImpk",
@@ -967,22 +990,43 @@
             }
         }
 
-        async function handleChangePassword() {
-            const user = auth.currentUser;
-            if (!user) {
-                alert('Ju lutem identifikohuni fillimisht!');
+        function openPasswordModal() {
+            document.getElementById('password-modal').classList.remove('hidden');
+            document.getElementById('new-password-input').value = '';
+            document.getElementById('new-password-input').focus();
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+            document.getElementById('new-password-input').value = '';
+        }
+
+        async function saveNewPassword() {
+            const newPassword = document.getElementById('new-password-input').value;
+
+            if (!newPassword || newPassword.length < 6) {
+                alert('Fjalëkalimi duhet të ketë të paktën 6 karaktere!');
                 return;
             }
 
-            const confirmed = confirm(`Dëshironi të merrni një email për ndryshimin e fjalëkalimit në: ${user.email}?`);
-            if (!confirmed) return;
+            const user = auth.currentUser;
+            if (!user) {
+                alert('Ju lutem identifikohuni fillimisht!');
+                closePasswordModal();
+                return;
+            }
 
             try {
-                await sendPasswordResetEmail(auth, user.email);
-                alert('Email-i u dërgua! Kontrolloni postën tuaj.');
+                await updatePassword(user, newPassword);
+                alert('Fjalëkalimi u ndryshua me sukses!');
+                closePasswordModal();
             } catch (error) {
-                console.error('Password reset error:', error);
-                alert('Gabim gjatë dërgimit të email-it: ' + error.message);
+                console.error('Password update error:', error);
+                if (error.code === 'auth/requires-recent-login') {
+                    alert('Për arsye sigurie, ju lutem dilni dhe hyni përsëri, pastaj provoni të ndryshoni fjalëkalimin.');
+                } else {
+                    alert('Gabim gjatë ndryshimit të fjalëkalimit: ' + error.message);
+                }
             }
         }
 
@@ -1029,7 +1073,9 @@
         // Expose functions to global scope for onclick handlers
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
-        window.handleChangePassword = handleChangePassword;
+        window.openPasswordModal = openPasswordModal;
+        window.closePasswordModal = closePasswordModal;
+        window.saveNewPassword = saveNewPassword;
         window.createNew = createNew;
         window.showClientManagement = showClientManagement;
         window.showPanicList = showPanicList;
