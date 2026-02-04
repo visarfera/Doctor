@@ -1001,6 +1001,29 @@
         window.onload = () => {
             buildForms();
         };
+
+        // Expose functions to global scope for onclick handlers
+        window.handleLogin = handleLogin;
+        window.handleLogout = handleLogout;
+        window.createNew = createNew;
+        window.showClientManagement = showClientManagement;
+        window.showPanicList = showPanicList;
+        window.showList = showList;
+        window.showDashboard = showDashboard;
+        window.saveData = saveData;
+        window.showClientForm = showClientForm;
+        window.handleSaveClient = handleSaveClient;
+        window.deleteClient = deleteClient;
+        window.previewDoc = previewDoc;
+        window.editDoc = editDoc;
+        window.deleteDoc = deleteDoc;
+        window.renderList = renderList;
+        window.handleFuzzySearch = handleFuzzySearch;
+        window.selectFuzzy = selectFuzzy;
+        window.togglePriceNA = togglePriceNA;
+        window.addNewPrepField = addNewPrepField;
+        window.togglePrepRow = togglePrepRow;
+        window.clearSig = clearSig;
     </script>
 </body>
 
