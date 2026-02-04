@@ -431,10 +431,12 @@
     </div>
 
     <script type="module">
+        // CONSOLIDATED FIREBASE IMPORTS
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, Timestamp, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyDF5NmnA6XPkhp4TIgHWlnYXCZ3SIlImpk",
             authDomain: "doctor-1a7e9.firebaseapp.com",
@@ -445,9 +447,10 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const firestore = getFirestore(app);
+        const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // CONSTANTS
         const SH_TYPES = ["DEZINFEKTIM", "DEZINSEKTIM", "DERATIZIM", "REPELIM", "KONTROLL", "INTERVENIM", "MONITORIMI DHE KONTROLLIMI I DËMTUESVE"];
         const PEST_TYPES = ["BAKTERE/VIRUSE/FUNGJE/SPORE", "FURRTARE", "BUBRRECA", "MUSHKONJA", "MIZA", "GREJZA", "ÇIMKA", "PLESHTA", "SILVERFISH/MILIPIDE", "BREJTËS", "GJARPËRINJË", "PËLLUMBA"];
         const METODA_TYPES = ["E LËNGSHME", "E NGURTË", "GRANULA", "PLUHUR", "SHKUMË"];
@@ -457,24 +460,20 @@
         const LOGO_URL = 'https://i.imgur.com/cMRJk4p.png';
         const STAMP_URL = 'https://i.imgur.com/0FbFlq8.png';
 
-        let db = [];
-        let clientsDb = [];
+        // DATA VARIABLES
+        let certsData = [];
+        let clientsData = [];
         let currentId = null;
         let padTekniku, padKlienti;
 
+        // FIREBASE DATA FUNCTIONS
         async function loadData() {
-            const certsSnap = await getDocs(collection(firestore, 'clients'));
-            db = certsSnap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+            const certsSnap = await getDocs(collection(db, 'clients'));
+            certsData = certsSnap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
 
-            const clientsSnap = await getDocs(collection(firestore, 'clientsDb'));
-            clientsDb = clientsSnap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+            const clientsSnap = await getDocs(collection(db, 'clientsDb'));
+            clientsData = clientsSnap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
         }
-
-        async function persist() {
-            // Firebase auto-persists, no action needed
-        }
-
-        // --- CORE UI ---
         function showDashboard() {
             document.querySelectorAll('#app > div').forEach(d => d.classList.add('hidden'));
             document.getElementById('dashboard-view').classList.remove('hidden');
@@ -559,7 +558,7 @@
             }
         }
 
-        async function saveData() {
+        function saveData() {
             const preps = Array.from(document.querySelectorAll('.prep-check:checked')).map(c => {
                 const sid = c.dataset.name.replace(/\s/g, '_');
                 const row = document.getElementById(`qty-row-${sid}`);
@@ -573,7 +572,7 @@
             const priceNA = document.getElementById('f-price-na').checked;
             const priceValue = priceNA ? 'N/A' : document.getElementById('f-cmimi').value;
 
-            const docData = {
+            const doc = {
                 id: currentId,
                 data: document.getElementById('f-data').value,
                 ora: document.getElementById('f-ora').value,
@@ -597,55 +596,25 @@
                 show_stamp: document.getElementById('f-stamp-toggle').checked,
                 sig_tekniku: padTekniku && !padTekniku.isEmpty() ? padTekniku.toDataURL() : null,
                 sig_klienti: padKlienti && !padKlienti.isEmpty() ? padKlienti.toDataURL() : null,
-                timestamp: Timestamp.now(),
                 ts: Date.now()
             };
 
-            try {
-                const existingDoc = db.find(x => x.id === currentId);
-                if (existingDoc && existingDoc.firestoreId) {
-                    await updateDoc(doc(firestore, 'clients', existingDoc.firestoreId), docData);
-                    const idx = db.findIndex(x => x.id === currentId);
-                    db[idx] = { ...docData, firestoreId: existingDoc.firestoreId };
-                } else {
-                    const docRef = await addDoc(collection(firestore, 'clients'), docData);
-                    db.push({ ...docData, firestoreId: docRef.id });
+            const idx = db.findIndex(x => x.id === currentId);
+            if (idx > -1) db[idx] = doc; else db.push(doc);
+
+            if (doc.klienti) {
+                const existing = clientsDb.find(c => c.klienti === doc.klienti && c.adresa === doc.adresa);
+                if (!existing) {
+                    clientsDb.push({ klienti: doc.klienti, adresa: doc.adresa, nui: doc.nui, m2: doc.m2, tel: doc.tel, email: doc.email });
                 }
-
-                if (docData.klienti) {
-                    const existing = clientsDb.find(c => c.klienti === docData.klienti && c.adresa === docData.adresa);
-                    const clientData = { klienti: docData.klienti, adresa: docData.adresa, nui: docData.nui, m2: docData.m2, tel: docData.tel, email: docData.email };
-
-                    if (existing && existing.firestoreId) {
-                        await updateDoc(doc(firestore, 'clientsDb', existing.firestoreId), clientData);
-                        Object.assign(existing, clientData);
-                    } else if (!existing) {
-                        const clientRef = await addDoc(collection(firestore, 'clientsDb'), clientData);
-                        clientsDb.push({ ...clientData, firestoreId: clientRef.id });
-                    }
-                }
-
-                previewDoc(docData);
-            } catch (error) {
-                console.error("Error saving:", error);
-                alert("Gabim gjatë ruajtjes: " + error.message);
             }
+
+            persist();
+            previewDoc(doc);
         }
 
-        async function deleteDoc(id) {
-            if (!confirm("Fshij këtë vërtetim?")) return;
-
-            try {
-                const docToDelete = db.find(x => x.id === id);
-                if (docToDelete && docToDelete.firestoreId) {
-                    await deleteDoc(doc(firestore, 'clients', docToDelete.firestoreId));
-                }
-                db = db.filter(x => x.id !== id);
-                renderList();
-            } catch (error) {
-                console.error("Error deleting:", error);
-                alert("Gabim gjatë fshirjes: " + error.message);
-            }
+        function deleteDoc(id) {
+            if (confirm("Fshij këtë vërtetim?")) { db = db.filter(x => x.id !== id); persist(); renderList(); }
         }
 
         // --- SORTING ---
@@ -742,7 +711,7 @@
                 </div>`).join('');
         }
 
-        async function handleSaveClient() {
+        function handleSaveClient() {
             const c = {
                 klienti: document.getElementById('c-klienti').value.trim().toUpperCase(),
                 nui: document.getElementById('c-nui').value.trim().toUpperCase(),
@@ -753,38 +722,18 @@
             };
             if (!c.klienti || !c.nui) return alert("Emri dhe NUI janë obligative!");
 
-            try {
-                const existing = clientsDb.find(x => x.klienti === c.klienti && x.adresa === c.adresa);
-                if (existing && existing.firestoreId) {
-                    await updateDoc(doc(firestore, 'clientsDb', existing.firestoreId), c);
-                    Object.assign(existing, c);
-                } else {
-                    const clientRef = await addDoc(collection(firestore, 'clientsDb'), c);
-                    clientsDb.push({ ...c, firestoreId: clientRef.id });
-                }
-
-                alert("Klienti u ruajt!");
-                showClientManagement();
-            } catch (error) {
-                console.error("Error saving client:", error);
-                alert("Gabim gjatë ruajtjes: " + error.message);
+            const existing = clientsDb.find(x => x.klienti === c.klienti && x.adresa === c.adresa);
+            if (existing) {
+                Object.assign(existing, c);
+            } else {
+                clientsDb.push(c);
             }
+
+            persist(); alert("Klienti u ruajt!"); showClientManagement();
         }
 
-        async function deleteClient(nui) {
-            if (!confirm("Fshij klientin?")) return;
-
-            try {
-                const clientToDelete = clientsDb.find(x => x.nui === nui);
-                if (clientToDelete && clientToDelete.firestoreId) {
-                    await deleteDoc(doc(firestore, 'clientsDb', clientToDelete.firestoreId));
-                }
-                clientsDb = clientsDb.filter(x => x.nui !== nui);
-                renderClientsTable();
-            } catch (error) {
-                console.error("Error deleting client:", error);
-                alert("Gabim gjatë fshirjes: " + error.message);
-            }
+        function deleteClient(nui) {
+            if (confirm("Fshij klientin?")) { clientsDb = clientsDb.filter(x => x.nui !== nui); persist(); renderClientsTable(); }
         }
 
         function updateDashboardCount() {
@@ -967,7 +916,7 @@
             if (!clientMgmtBtn) return;
 
             try {
-                const userDocRef = doc(firestore, 'users', userEmail);
+                const userDocRef = doc(db, 'users', userEmail);
                 const userDocSnap = await getDoc(userDocRef);
 
                 const isAdmin = userDocSnap.exists() && userDocSnap.data().roli === 'admin';
@@ -981,28 +930,24 @@
         // AUTH STATE OBSERVER
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // User is signed in
                 document.getElementById('login-view').classList.add('hidden');
                 document.getElementById('dashboard-view').classList.remove('hidden');
 
-                checkAdminAccess(user.email);
+                await checkAdminAccess(user.email);
 
-                if (db.length === 0) {
+                if (certsData.length === 0) {
                     await loadData();
                 }
                 updateDashboardCount();
             } else {
-                // User is signed out
                 document.getElementById('dashboard-view').classList.add('hidden');
                 document.getElementById('login-view').classList.remove('hidden');
             }
         });
 
-        window.onload = () => {
-            buildForms();
-        };
+        window.onload = () => { buildForms(); };
 
-        // Expose functions to global scope for onclick handlers
+        // EXPOSE FUNCTIONS TO GLOBAL SCOPE FOR ONCLICK HANDLERS
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
         window.createNew = createNew;
