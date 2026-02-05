@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
@@ -481,7 +482,26 @@
         const PEST_TYPES = ["BAKTERE/VIRUSE/FUNGJE/SPORE", "FURRTARE", "BUBRRECA", "MUSHKONJA", "MIZA", "GREJZA", "ÇIMKA", "PLESHTA", "SILVERFISH/MILIPIDE", "BREJTËS", "GJARPËRINJË", "PËLLUMBA"];
         const METODA_TYPES = ["E LËNGSHME", "E NGURTË", "GRANULA", "PLUHUR", "SHKUMË"];
         const UNIT_TYPES = ["LITËR", "ML", "GRAM", "KILOGRAM", "COPË", "KUTIA", "NGJITËS"];
-        const FIXED_PREPS = ["DIFETHIALONE", "ACID BORIC", "SILICA GEL", "HYDRAMETHYLNON", "CLOTHIANIDINE", "ABAMECTIN", "SODIUM TETHRABORATE DECAHYDRATE (BORAX)", "LAMBDA-CYHALOTHRIN", "PYRIPROXIFEN", "PERMETHRIN", "IMIDACLOPRID", "DELTAMETHRIN", "PYRETHRINS-PIPERONYL BUTOXIDE", "DIDECYLDIMETHYL AMMONIUM CHLORIDE"];
+        const FIXED_PREPS = [
+            "DIDECYLDIMETHYL AMMONIUM CHLORIDE",
+            "QARTENARY AMMONIUM COMPUND",
+            "DISDIUM CARBONATE WITH H2O2",
+            "ACID BORIC",
+            "SILICA GEL",
+            "HYDRAMETHYLNON",
+            "CLOTHIANIDINE",
+            "ABAMECTIN",
+            "SODIUM TETHRABORATE DECAHYDRATE (BORAX)",
+            "LAMBDA-CYHALOTHRIN",
+            "PYRIPROXIFEN",
+            "PERMETHRIN",
+            "IMIDACLOPRID",
+            "DELTAMETHRIN",
+            "PYRETHRINS-PIPERONYL BUTOXIDE",
+            "BRODIFACOUM",
+            "BROMADIOLONE",
+            "DIFETHIALONE"
+        ];
         const DEFAULT_NOTE = "Shërbimi u krye sipas standardeve dhe protokolleve ekologjike të kërkuara për trajtimin e hapësirave.";
         const LOGO_URL = 'https://i.imgur.com/cMRJk4p.png';
         const STAMP_URL = 'https://i.imgur.com/0FbFlq8.png';
@@ -881,96 +901,170 @@
         function clearSig(t) { if (t === 'tekniku') padTekniku.clear(); else padKlienti.clear(); }
 
         // --- PDF ENGINE ---
-        function ensureImagesLoaded(element) {
-            const imgs = Array.from(element.querySelectorAll('img'));
-            const promises = imgs.map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise(resolve => {
-                    img.onload = resolve;
-                    img.onerror = resolve; // Continue even if error
-                });
+        async function getBase64FromUrl(url) {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
             });
-            return Promise.all(promises);
         }
 
-        function previewDoc(idOrData) {
+        async function previewDoc(idOrData) {
             const d = typeof idOrData === 'object' ? idOrData : db.find(x => x.id === idOrData); if (!d) return;
-            const logo = `<div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_URL}" crossorigin="anonymous" style="width:250px;display:inline-block;"></div>`;
-            const stampImg = d.show_stamp !== false ? `<img src="${STAMP_URL}" crossorigin="anonymous" style="width:130px;position:absolute;bottom:130px;left:50%;transform:translateX(-50%);opacity:0.8;z-index:10;pointer-events:none;">` : '';
 
-            const displayPrice = d.price_is_na ? 'N/A' : (d.cmimi ? `${d.cmimi} €` : '-');
-            const validityText = d.validity || '6 Muaj';
+            // Use jsPDF directly for strict layout control
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-            const pdfTemplate = `
-            <div id="pdf-final" style="width:800px;min-height:1080px;padding:30px;background:white;color:black;font-family:Inter;display:flex;flex-direction:column;justify-content:space-between;border:1px solid #eee;position:relative;">
-                ${stampImg}
-                <div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;margin-bottom:10px;">
-                        <div></div><div>${logo}</div><div style="text-align:right;"><div style="font-weight:900;font-size:16px;">VËRTETIMI</div><div style="font-weight:700;">${d.nr_v}</div></div>
-                    </div>
-                    <h1 style="text-align:center;font-weight:900;text-transform:uppercase;font-size:22px;margin:10px 0;">Vërtetim për kryerjen e shërbimeve DDD</h1>
-                    <div style="display:flex;gap:40px;justify-content:center;background:#f9f9f9;padding:10px;border-radius:10px;font-weight:900;margin-bottom:15px;border:2px solid #000;">
-                        <div>DATA: ${d.data.split('-').reverse().join('.')}</div><div>ORA: ${d.ora}</div>
-                    </div>
-                    <div style="border:2px solid black;padding:10px;border-radius:15px;margin-bottom:8px;line-height:1.5;">
-                        <div style="display:flex;border-bottom:1px solid #eee;"><span style="width:100px;font-weight:900;color:#666;font-size:11px;">KLIENTI:</span><span style="font-weight:900;text-transform:uppercase;">${d.klienti}</span></div>
-                        <div style="display:flex;border-bottom:1px solid #eee;"><span style="width:100px;font-weight:900;color:#666;font-size:11px;">ADRESA:</span><span style="font-weight:700;text-transform:uppercase;">${d.adresa}</span></div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:5px;">
-                            <div style="display:flex;"><span style="font-weight:900;color:#666;font-size:10px;margin-right:10px;">NUI:</span><span style="font-weight:700;">${d.nui}</span></div>
-                            <div style="display:flex;"><span style="font-weight:900;color:#666;font-size:10px;margin-right:10px;">M2:</span><span style="font-weight:700;">${d.m2}</span></div>
-                            <div style="display:flex;"><span style="font-weight:900;color:#666;font-size:10px;margin-right:10px;">TEL:</span><span style="font-weight:700;">${d.tel}</span></div>
-                        </div>
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:8px;">
-                        <div style="border:2px solid black;padding:10px;border-radius:15px;">
-                            <div style="font-weight:900;font-size:11px;border-bottom:1px solid #000;margin-bottom:5px;">SHËRBIMI</div>
-                            <div style="font-size:9px;">${SH_TYPES.map(s => `<div style="display:flex;align-items:center;margin-bottom:1px;"><div style="width:10px;height:10px;border:1px solid black;margin-right:4px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;">${d.sherbimet.includes(s) ? '✓' : ''}</div><b>${s}</b></div>`).join('')}</div>
-                        </div>
-                        <div style="border:2px solid black;padding:10px;border-radius:15px;">
-                            <div style="font-weight:900;font-size:11px;border-bottom:1px solid #000;margin-bottom:5px;">PESTAT</div>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;font-size:9px;">${PEST_TYPES.map(p => `<div style="display:flex;align-items:center;margin-bottom:1px;"><div style="width:9px;height:9px;border:1px solid black;margin-right:4px;display:flex;align-items:center;justify-content:center;font-size:7px;">${d.pestat.includes(p) ? '✓' : ''}</div><b>${p}</b></div>`).join('')}</div>
-                        </div>
-                    </div>
-                    <div style="border:2px solid black;border-radius:15px;overflow:hidden;margin-bottom:6px;">
-                        <table style="width:100%;border-collapse:collapse;font-size:8px;">
-                            <tr style="background:black;color:white;font-weight:900;font-size:9px;"><th style="padding:5px;text-align:left;">PREPARATI</th><th style="padding:5px;">NJËSIA</th><th style="padding:5px;">SASIA</th></tr>
-                            ${d.preparatet.map(p => `<tr style="border-top:1px solid #eee;"><td style="padding:3px;font-weight:900;font-size:8px;line-height:1.2;">${p.emri}</td><td style="padding:3px;text-align:center;font-size:9px;">${p.njesia}</td><td style="padding:3px;text-align:center;font-weight:900;font-size:9px;">${p.sasia}</td></tr>`).join('')}
-                        </table>
-                    </div>
-                    <div style="border:2px solid black;padding:8px;border-radius:15px;font-weight:900;margin-bottom:8px;display:flex;gap:15px;font-size:10px;">
-                        <span style="font-style:italic;">METODA:</span>
-                        ${METODA_TYPES.map(m => `<div style="display:flex;align-items:center;"><div style="width:15px;height:15px;border:1px solid black;margin-right:5px;display:flex;align-items:center;justify-content:center;">${d.metodat.includes(m) ? '✕' : ''}</div>${m}</div>`).join('')}
-                    </div>
-                    ${d.shenime ? `<div style="margin-bottom:6px;"><div style="font-weight:900;font-size:9px;color:#999;">SHËNIME:</div><div style="border:1px solid #ddd;padding:8px;border-radius:10px;font-size:10px;min-height:40px;">${d.shenime}</div></div>` : ''}
-                </div>
-                <div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:50px;padding:0 30px;text-align:center;font-weight:900;font-size:12px;">
-                        <div><div style="height:60px;display:flex;align-items:center;justify-content:center;">${d.sig_tekniku ? `<img src="${d.sig_tekniku}" style="max-height:60px;">` : ''}</div><div style="border-top:1px solid black;padding-top:5px;">TEKNIKU: ${d.tekniku_emri}</div></div>
-                        <div><div style="height:60px;display:flex;align-items:center;justify-content:center;">${d.sig_klienti ? `<img src="${d.sig_klienti}" style="max-height:60px;">` : ''}</div><div style="border-top:1px solid black;padding-top:5px;">PRANUESI: ${d.pranuesi_emri || ''}</div></div>
-                    </div>
-                    <div style="border-top:2px solid black;margin-top:30px;padding-top:10px;text-align:center;font-weight:900;font-size:10px;">
-                        <div>NUI 811498957 | RR. MEHMET AKIF ERSOY NR. 17, TASLIXHE II - PRISHTINË | e-mail info@doctorexterminator.com | 044 158 638, 048 158 638</div>
-                        <div style="color:#999;font-style:italic;margin-top:5px;">* Dokument zyrtar | Vlefshmëria: ${validityText}</div>
-                    </div>
-                </div>
-            </div>`;
-            document.getElementById('pdf-render-zone').innerHTML = pdfTemplate;
-            document.getElementById('print-content').innerHTML = pdfTemplate;
-            document.querySelectorAll('#app > div').forEach(div => div.classList.add('hidden'));
-            document.getElementById('print-view').classList.remove('hidden');
+            // Fonts
+            doc.setFont("helvetica", "bold");
 
-            document.getElementById('btn-download-pdf').onclick = async () => {
-                const element = document.getElementById('pdf-final');
-                await ensureImagesLoaded(element);
-                const opt = {
-                    margin: 0,
-                    filename: `Vertetim_${d.nr_v.replace(/\//g, '-')}_${d.klienti.replace(/\s+/g, '_')}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: true },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-                html2pdf().from(element).set(opt).save();
-            };
+            // LOGOS
+            try {
+                const logoData = await getBase64FromUrl(LOGO_URL);
+                doc.addImage(logoData, 'PNG', 55, 10, 100, 25); // Centered Logo
+            } catch (e) { console.error("Logo Error", e); }
+
+            if (d.show_stamp !== false) {
+                try {
+                    const stampData = await getBase64FromUrl(STAMP_URL);
+                    doc.addImage(stampData, 'PNG', 150, 230, 40, 40); // Bottom Right
+                } catch (e) { console.error("Stamp Error", e); }
+            }
+
+            // HEADER INFO
+            doc.setFontSize(10);
+            doc.text(`Nr. ${d.nr_v}`, 170, 20, { align: 'right' });
+
+            doc.setFontSize(16);
+            doc.text("VËRTETIM PËR KRYERJEN E SHËRBIMEVE DDD", 105, 45, { align: 'center' });
+
+            // DATA/ORA BOX
+            doc.setDrawColor(0); doc.setFillColor(249, 250, 251); doc.rect(40, 50, 130, 10, 'FD');
+            doc.setFontSize(11);
+            doc.text(`DATA: ${d.data.split('-').reverse().join('.')}`, 50, 56.5);
+            doc.text(`ORA: ${d.ora}`, 120, 56.5);
+
+            // CLIENT BOX
+            doc.rect(15, 65, 180, 28);
+            doc.setFontSize(10);
+            let cy = 72;
+            doc.text(`KLIENTI:   ${d.klienti}`, 18, cy); cy += 7;
+            doc.text(`ADRESA:   ${d.adresa}`, 18, cy); cy += 7;
+            doc.text(`NUI: ${d.nui}        M²: ${d.m2}        TEL: ${d.tel}`, 18, cy);
+
+            // GRID (Sherbimi / Pests)
+            doc.rect(15, 98, 90, 30); // Left Box
+            doc.rect(105, 98, 90, 30); // Right Box
+
+            // Left content
+            doc.setFontSize(9);
+            doc.text("SHËRBIMI", 18, 103);
+            doc.line(15, 105, 105, 105);
+            let sy = 109;
+            doc.setFontSize(7);
+            SH_TYPES.forEach((s, i) => {
+                const isChecked = d.sherbimet && d.sherbimet.includes(s) ? "X" : " ";
+                doc.text(`[${isChecked}] ${s}`, 18, sy);
+                sy += 3.5;
+            });
+
+            // Right content
+            doc.setFontSize(9);
+            doc.text("PESTAT", 108, 103);
+            doc.line(105, 105, 195, 105);
+            let py = 109;
+            doc.setFontSize(7);
+            PEST_TYPES.forEach((p, i) => {
+                const isChecked = d.pestat && d.pestat.includes(p) ? "X" : " ";
+                const px = i < 6 ? 108 : 150;
+                const py_real = i < 6 ? (py + (i * 3.5)) : (py + ((i - 6) * 3.5));
+                doc.text(`[${isChecked}] ${p}`, px, py_real);
+            });
+
+            // CHEMICALS (PREPARATET)
+            const startY = 132;
+            doc.setFillColor(0); doc.rect(15, startY, 180, 6, 'F');
+            doc.setTextColor(255);
+            doc.setFontSize(9);
+            doc.text("PREPARATI", 18, startY + 4);
+            doc.text("NJËSIA", 140, startY + 4);
+            doc.text("SASIA", 170, startY + 4);
+
+            doc.setTextColor(0);
+            let yPos = startY + 10;
+            doc.setFontSize(8); // FONT SIZE 8 (User request)
+
+            if (d.preparatet && d.preparatet.length > 0) {
+                d.preparatet.forEach(p => {
+                    const chemText = p.emri;
+                    const splitChems = doc.splitTextToSize(chemText, 120);
+
+                    doc.text(splitChems, 18, yPos);
+                    doc.text(p.njesia || '-', 140, yPos);
+                    doc.text(p.sasia || '-', 170, yPos);
+
+                    yPos += (splitChems.length * 4) + 2; // TIGHT SPACING
+                });
+            } else {
+                doc.text("Nuk ka preparate", 18, yPos);
+            }
+
+            // METHODS
+            yPos = Math.max(yPos, startY + 14);
+            yPos += 5;
+            doc.rect(15, yPos, 180, 8);
+            doc.setFontSize(8);
+            const methodsText = "METODA: " + METODA_TYPES.map(m => `[${d.metodat && d.metodat.includes(m) ? 'X' : ' '}] ${m}`).join('   ');
+            doc.text(methodsText, 18, yPos + 5);
+
+            // NOTES
+            if (d.shenime) {
+                yPos += 12;
+                doc.setFontSize(8);
+                doc.text("SHËNIME:", 18, yPos);
+                const splitNotes = doc.splitTextToSize(d.shenime, 175);
+                doc.text(splitNotes, 18, yPos + 4);
+            }
+
+            // FOOTER (Signatures & Price) - RESET yPos (User request)
+            yPos = 240;
+
+            // Signatures
+            doc.setFontSize(10);
+            const technicianName = d.tekniku_emri || '';
+            const techSigImg = d.sig_tekniku;
+
+            if (techSigImg) {
+                try { doc.addImage(techSigImg, 'PNG', 25, yPos - 15, 40, 15); } catch (e) { }
+            }
+            doc.line(20, yPos, 80, yPos);
+            doc.text(`TEKNIKU: ${technicianName}`, 25, yPos + 5);
+
+            const clientName = d.pranuesi_emri || '';
+            const clientSigImg = d.sig_klienti;
+            if (clientSigImg) {
+                try { doc.addImage(clientSigImg, 'PNG', 125, yPos - 15, 40, 15); } catch (e) { }
+            }
+            doc.line(120, yPos, 180, yPos);
+            doc.text(`PRANUESI: ${clientName}`, 125, yPos + 5);
+
+            // Price & Validity
+            yPos += 20;
+            const priceTxt = d.price_is_na ? "N/A" : (d.cmimi ? `${d.cmimi} €` : "0.00 €");
+            const validityTxt = d.validity || "6 Muaj";
+
+            doc.setFontSize(11);
+            doc.text(`ÇMIMI: ${priceTxt}     |     VLEFSHMËRIA: ${validityTxt}`, 105, yPos, { align: 'center' });
+
+            // Footer Info
+            doc.setFontSize(7);
+            doc.setTextColor(100);
+            doc.text("NUI 811498957 | RR. MEHMET AKIF ERSOY NR. 17, TASLIXHE II - PRISHTINË | +383 44 158 638", 105, 290, { align: 'center' });
+
+            doc.save(`Vertetim_${d.nr_v.replace(/\//g, '-')}_${d.klienti.replace(/\s+/g, '_')}.pdf`);
         }
 
         // AUTH FUNCTIONS
