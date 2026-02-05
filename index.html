@@ -651,13 +651,14 @@
             }
         }
 
-        async function deleteDoc(id) {
+        async function deleteVertetim(id) {
             if (!confirm("Fshij këtë vërtetim?")) return;
 
             try {
                 const docToDelete = db.find(x => x.id === id);
                 if (docToDelete && docToDelete.firestoreId) {
-                    await deleteDoc(doc(firestore, 'clients', docToDelete.firestoreId));
+                    const { deleteDoc: firebaseDeleteDoc } = await import("https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js");
+                    await firebaseDeleteDoc(doc(firestore, 'clients', docToDelete.firestoreId));
                 }
                 db = db.filter(x => x.id !== id);
                 renderList();
@@ -704,7 +705,7 @@
                         <div class="flex justify-center gap-3">
                             <button onclick="previewDoc(${d.id})" class="text-blue-600 hover:scale-110 transition-transform"><i class="fas fa-file-pdf"></i></button>
                             <button onclick="editDoc(${d.id})" class="text-amber-600 hover:scale-110 transition-transform"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteDoc(${d.id})" class="text-red-600 hover:scale-110 transition-transform"><i class="fas fa-trash"></i></button>
+                            <button onclick="deleteVertetim(${d.id})" class="text-red-600 hover:scale-110 transition-transform"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
                 </tr>`;
@@ -1035,7 +1036,7 @@
         window.deleteClient = deleteClient;
         window.previewDoc = previewDoc;
         window.editDoc = editDoc;
-        window.deleteDoc = deleteDoc;
+        window.deleteVertetim = deleteVertetim;
         window.renderList = renderList;
         window.handleFuzzySearch = handleFuzzySearch;
         window.selectFuzzy = selectFuzzy;
