@@ -183,6 +183,7 @@
                         <th class="p-4">Klienti</th>
                         <th class="p-4">Data</th>
                         <th class="p-4">Çmimi</th>
+                        <th class="p-4">Lëshuar nga</th>
                         <th class="p-4 text-center">Veprimet</th>
                     </tr>
                     <tbody id="docs-list" class="text-sm font-bold"></tbody>
@@ -616,6 +617,7 @@
                 show_stamp: document.getElementById('f-stamp-toggle').checked,
                 sig_tekniku: padTekniku && !padTekniku.isEmpty() ? padTekniku.toDataURL() : null,
                 sig_klienti: padKlienti && !padKlienti.isEmpty() ? padKlienti.toDataURL() : null,
+                leshuar_nga: auth.currentUser ? auth.currentUser.email : 'N/A',
                 timestamp: Timestamp.now(),
                 ts: Date.now()
             };
@@ -697,10 +699,12 @@
 
             document.getElementById('docs-list').innerHTML = filtered.map(d => {
                 const displayPrice = d.price_is_na ? 'N/A' : (d.cmimi ? `${d.cmimi} €` : '-');
+                const leshuarNga = d.leshuar_nga ? d.leshuar_nga.split('@')[0] : '-';
                 return `
                 <tr class="border-b hover:bg-gray-50 uppercase text-[11px] font-bold">
                     <td class="p-4"><span class="bg-black text-white px-2 py-1 rounded">${d.nr_v}</span></td>
                     <td class="p-4">${d.klienti}</td><td class="p-4">${d.data}</td><td class="p-4">${displayPrice}</td>
+                    <td class="p-4 text-gray-500 text-[10px]">${leshuarNga}</td>
                     <td class="p-4 text-center">
                         <div class="flex justify-center gap-3">
                             <button onclick="previewDoc(${d.id})" class="text-blue-600 hover:scale-110 transition-transform"><i class="fas fa-file-pdf"></i></button>
