@@ -295,7 +295,7 @@
                         <label
                             class="block text-xs font-black text-black uppercase tracking-widest border-b-2 border-black pb-2 mb-4">Lloji
                             i Shërbimit / Metoda</label>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="sh-inputs"></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="sh-inputs"></div>
                     </div>
                 </div>
 
@@ -512,7 +512,15 @@
         const firestore = getFirestore(app);
         const auth = getAuth(app);
 
-        const SH_TYPES = ["Dezinsektim", "Dezinfektim", "Deratizim", "Repelim"];
+        const sherbimet = [
+            "DEZINFEKTIM",
+            "DEZINSEKTIM",
+            "DERATIZIM",
+            "REPELIM",
+            "KONTROLL",
+            "INTERVENIM",
+            "MONITORIMI DHE KONTROLLIMI I DËMTUESVE"
+        ];
         const demtuesit = [
             "BAKTERE/VIRUSE/FUNGJE/SPORE",
             "FURRTARE",
@@ -921,7 +929,7 @@
 
         // --- FORMS UTILS ---
         function buildForms() {
-            const serviceCat = { id: "sherbimet-container", title: "Lloji i Shërbimit / Metoda", list: SH_TYPES, type: 'service' };
+            const serviceCat = { id: "sherbimet-container", title: "Lloji i Shërbimit / Metoda", list: sherbimet, type: 'service' };
             document.getElementById('sh-inputs').innerHTML = fillCheckboxes(serviceCat);
 
             const pestCat = { id: "demtuesit-container", title: "Dëmtuesit", list: demtuesit, type: 'pest' };
@@ -1048,7 +1056,7 @@
                     <div style="display:grid;grid-template-columns:1fr 2fr;gap:15px;margin-bottom:15px;">
                         <div style="border:2px solid black;padding:10px;border-radius:15px;">
                             <div style="font-weight:900;font-size:11px;border-bottom:1px solid #000;margin-bottom:5px;">SHËRBIMI</div>
-                            <div style="font-size:12px;">${SH_TYPES.map(s => `<div style="display:flex;align-items:center;margin-bottom:2px;"><div style="width:12px;height:12px;border:1px solid black;margin-right:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;">${d.sherbimet.includes(s) ? '✓' : ''}</div><b>${s}</b></div>`).join('')}</div>
+                            <div style="font-size:12px;">${sherbimet.map(s => `<div style="display:flex;align-items:center;margin-bottom:2px;"><div style="width:12px;height:12px;border:1px solid black;margin-right:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;">${d.sherbimet.includes(s) ? '✓' : ''}</div><b>${s}</b></div>`).join('')}</div>
                         </div>
                         <div style="border:2px solid black;padding:10px;border-radius:15px;">
                             <div style="font-weight:900;font-size:11px;border-bottom:1px solid #000;margin-bottom:5px;">DËMTUESIT</div>
