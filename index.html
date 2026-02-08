@@ -103,7 +103,7 @@
                     <span id="user-email-display" class="text-xs text-gray-500 hidden lg:block font-mono mr-2"></span>
 
                     <button onclick="openPasswordModal()"
-                        class="text-black hover:bg-gray-100 p-2 rounded-full transition flex items-center"
+                        class="text-blue-900 hover:bg-gray-100 p-2 rounded-full transition flex items-center"
                         title="Ndrysho Fjalëkalimin">
                         <i class="fas fa-key text-xl"></i> <span
                             class="hidden md:inline ml-1 text-sm font-bold">Fjalëkalimi</span>
@@ -341,7 +341,7 @@
                             <label
                                 class="flex items-center gap-2 cursor-pointer bg-gray-50 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-black transition-all">
                                 <input type="checkbox" id="f-price-na" class="w-5 h-5 accent-black"
-                                    onchange="togglePriceNA(this.checked)">
+                                    onchange="togglePriceInput(this.checked)">
                                 <span class="text-xs font-black uppercase select-none">N/A</span>
                             </label>
                         </div>
@@ -491,7 +491,7 @@
                 <div class="flex gap-4 pt-2">
                     <button onclick="closePasswordModal()"
                         class="flex-1 bg-gray-100 text-black p-4 rounded-xl font-black uppercase hover:bg-gray-200 transition-all text-sm">Anulo</button>
-                    <button onclick="handlePasswordChange()"
+                    <button onclick="saveNewPassword()"
                         class="flex-1 bg-black text-white p-4 rounded-xl font-black uppercase shadow-lg border-b-4 border-gray-800 hover:scale-[1.02] active:translate-y-1 transition-all text-sm text-center">Ndrysho</button>
                 </div>
             </div>
@@ -513,7 +513,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const firestore = getFirestore(app);
+        const db = getFirestore(app);
         const auth = getAuth(app);
 
         const sherbimet = [
@@ -581,17 +581,17 @@
         const LOGO_URL = 'https://i.imgur.com/cMRJk4p.png';
         const STAMP_URL = 'https://i.imgur.com/0FbFlq8.png';
 
-        let db = [];
+        let vertetimet = [];
         let clientsDb = [];
         let currentId = null;
         let currentUserRole = 'user'; // Global role tracking
         let padTekniku, padKlienti;
 
         async function loadData() {
-            const certsSnap = await getDocs(collection(firestore, 'clients'));
-            db = certsSnap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+            const certsSnap = await getDocs(collection(db, 'clients'));
+            vertetimet = certsSnap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
 
-            const clientsSnap = await getDocs(collection(firestore, 'clientsDb'));
+            const clientsSnap = await getDocs(collection(db, 'clientsDb'));
             clientsDb = clientsSnap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
         }
 
@@ -639,7 +639,7 @@
         function getNextNr() {
             const yr = new Date().getFullYear().toString().slice(-2);
             let max = 0;
-            db.forEach(d => {
+            vertetimet.forEach(d => {
                 if (d.nr_v && d.nr_v.includes('/' + yr)) {
                     const match = d.nr_v.match(/(\d+)\//);
                     if (match) { const n = parseInt(match[1]); if (n > max) max = n; }
@@ -650,7 +650,7 @@
 
         function createNew() {
             currentId = Date.now();
-            clearForm();
+            resetForm();
             const tani = new Date();
             document.getElementById('f-data').value = tani.toISOString().split('T')[0];
             document.getElementById('f-ora').value = tani.toTimeString().slice(0, 5);
@@ -665,7 +665,7 @@
             setTimeout(initPads, 200);
         }
 
-        function clearForm() {
+        function resetForm() {
             document.querySelectorAll('#edit-view input[type="text"], #edit-view input[type="date"], #edit-view input[type="time"], #edit-view input[type="email"], #edit-view textarea').forEach(i => i.value = '');
             document.querySelectorAll('#edit-view input[type="number"]').forEach(i => i.value = '');
             document.querySelectorAll('#edit-view input[type="checkbox"]').forEach(c => c.checked = false);
@@ -674,7 +674,7 @@
             FIXED_PREPS.forEach(p => togglePrepRow(p.replace(/\s/g, '_'), false));
         }
 
-        function togglePriceNA(isNA) {
+        function togglePriceInput(isNA) {
             const input = document.getElementById('f-cmimi');
             if (isNA) {
                 input.disabled = true;
@@ -734,16 +734,16 @@
             };
 
             try {
-                const existingDoc = db.find(x => x.id === currentId);
+                const existingDoc = vertetimet.find(x => x.id === currentId);
                 const editingId = existingDoc ? existingDoc.firestoreId : null;
 
                 if (editingId) {
-                    await updateDoc(doc(firestore, "clients", editingId), docData);
-                    const idx = db.findIndex(x => x.id === currentId);
-                    db[idx] = { ...docData, firestoreId: editingId };
+                    await updateDoc(doc(db, "clients", editingId), docData);
+                    const idx = vertetimet.findIndex(x => x.id === currentId);
+                    vertetimet[idx] = { ...docData, firestoreId: editingId };
                 } else {
-                    const docRef = await addDoc(collection(firestore, "clients"), docData);
-                    db.push({ ...docData, firestoreId: docRef.id });
+                    const docRef = await addDoc(collection(db, "clients"), docData);
+                    vertetimet.push({ ...docData, firestoreId: docRef.id });
                 }
 
                 if (docData.klienti) {
@@ -751,10 +751,10 @@
                     const clientData = { klienti: docData.klienti, adresa: docData.adresa, nui: docData.nui, m2: docData.m2, tel: docData.tel, email: docData.email };
 
                     if (existing && existing.firestoreId) {
-                        await updateDoc(doc(firestore, 'clientsDb', existing.firestoreId), clientData);
+                        await updateDoc(doc(db, 'clientsDb', existing.firestoreId), clientData);
                         Object.assign(existing, clientData);
                     } else if (!existing) {
-                        const clientRef = await addDoc(collection(firestore, 'clientsDb'), clientData);
+                        const clientRef = await addDoc(collection(db, 'clientsDb'), clientData);
                         clientsDb.push({ ...clientData, firestoreId: clientRef.id });
                     }
                 }
@@ -768,19 +768,15 @@
         }
 
         async function deleteClient(id) {
-            if (!confirm("Fshij këtë vërtetim?")) return;
-
+            if (!confirm("A jeni i sigurt që doni ta fshini këtë vërtetim?")) return;
             try {
-                const docToDelete = db.find(x => x.id === id);
-                if (docToDelete && docToDelete.firestoreId) {
-                    const { deleteDoc: firebaseDeleteDoc } = await import("https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js");
-                    await firebaseDeleteDoc(doc(firestore, 'clients', docToDelete.firestoreId));
-                }
-                db = db.filter(x => x.id !== id);
+                await deleteDoc(doc(db, "clients", id));
+                alert("Vërtetimi u fshi me sukses!");
+                vertetimet = vertetimet.filter(x => x.firestoreId !== id);
                 loadClients();
             } catch (error) {
-                console.error("Error deleting:", error);
-                alert("Gabim gjatë fshirjes: " + error.message);
+                console.error("Error removing document: ", error);
+                alert("Gabim gjatë fshirjes!");
             }
         }
 
@@ -794,7 +790,7 @@
 
         function loadClients(onlyExpired = false) {
             const queryValue = document.getElementById('search-input').value.toLowerCase();
-            let filtered = db.filter(d => d.klienti.toLowerCase().includes(queryValue) || d.nr_v.includes(queryValue));
+            let filtered = vertetimet.filter(d => d.klienti.toLowerCase().includes(queryValue) || d.nr_v.includes(queryValue));
             if (onlyExpired) {
                 const now = new Date();
                 filtered = filtered.filter(d => {
@@ -812,7 +808,7 @@
             });
 
             document.getElementById('docs-list').innerHTML = filtered.map(client => {
-                const id = client.id;
+                const id = client.firestoreId || client.id;
                 const displayPrice = client.price_is_na ? 'N/A' : (client.cmimi ? `${client.cmimi} €` : '-');
                 const leshuarNga = client.leshuar_nga ? client.leshuar_nga.split('@')[0] : '-';
 
@@ -848,8 +844,8 @@
         }
 
         function editClient(id) {
-            const d = db.find(x => x.id === id); if (!d) return;
-            currentId = id; clearForm();
+            const d = vertetimet.find(x => x.firestoreId === id || x.id === id); if (!d) return;
+            currentId = d.id; resetForm();
             ['data', 'ora', 'nr_v', 'klienti', 'adresa', 'nui', 'm2', 'tel', 'email', 'tekniku_emri', 'pranuesi_emri', 'shenime'].forEach(k => {
                 const el = document.getElementById('f-' + k); if (el) el.value = d[k] || '';
             });
@@ -912,10 +908,10 @@
             try {
                 const existing = clientsDb.find(x => x.klienti === c.klienti && x.adresa === c.adresa);
                 if (existing && existing.firestoreId) {
-                    await updateDoc(doc(firestore, 'clientsDb', existing.firestoreId), c);
+                    await updateDoc(doc(db, "clientsDb", existing.firestoreId), c);
                     Object.assign(existing, c);
                 } else {
-                    const clientRef = await addDoc(collection(firestore, 'clientsDb'), c);
+                    const clientRef = await addDoc(collection(db, "clientsDb"), c);
                     clientsDb.push({ ...c, firestoreId: clientRef.id });
                 }
 
@@ -933,7 +929,7 @@
             try {
                 const clientToDelete = clientsDb.find(x => x.nui === nui);
                 if (clientToDelete && clientToDelete.firestoreId) {
-                    await deleteDoc(doc(firestore, 'clientsDb', clientToDelete.firestoreId));
+                    await deleteDoc(doc(db, 'clientsDb', clientToDelete.firestoreId));
                 }
                 clientsDb = clientsDb.filter(x => x.nui !== nui);
                 renderClientsTable();
@@ -945,7 +941,7 @@
 
         function updateDashboardCount() {
             const now = new Date();
-            const count = db.filter(d => {
+            const count = vertetimet.filter(d => {
                 const validityMonths = parseInt(d.validity) || 6;
                 return (now - new Date(d.data)) / (1000 * 60 * 60 * 24 * 30) >= validityMonths;
             }).length;
@@ -1007,7 +1003,7 @@
             }
         }
         function togglePrepRow(sid, show) { const r = document.getElementById(`qty-row-${sid}`); if (r) r.style.display = show ? 'flex' : 'none'; }
-        function addNewPrepField(n = "", q = "", u = "LITËR") {
+        function shtoRjesht(n = "", q = "", u = "LITËR") {
             const div = document.createElement('div'); div.className = "p-3 border-2 border-gray-100 rounded-xl bg-gray-50";
             div.innerHTML = `<input type="text" class="custom-prep-name w-full p-2 text-[10px] border-2 border-gray-300 rounded mb-2 font-black uppercase" placeholder="EMRI" value="${n}"><div class="flex gap-2"><input type="text" class="custom-prep-qty p-2 text-xs border-2 border-gray-300 rounded w-16 font-bold" value="${q}"><select class="custom-prep-unit p-2 text-[9px] border-2 border-gray-300 rounded flex-1">${UNIT_TYPES.map(x => `<option value="${x}" ${u === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 px-2"><i class="fas fa-times"></i></button></div>`;
             document.getElementById('custom-prep-container').appendChild(div);
@@ -1051,7 +1047,7 @@
         }
 
         function generatePDF(idOrData) {
-            const d = typeof idOrData === 'object' ? idOrData : db.find(x => x.id === idOrData); if (!d) return;
+            const d = typeof idOrData === 'object' ? idOrData : vertetimet.find(x => x.firestoreId === idOrData || x.id === idOrData); if (!d) return;
             const logo = `<div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_URL}" crossorigin="anonymous" style="width:250px;display:inline-block;"></div>`;
             const stampImg = d.show_stamp !== false ? `<img src="${STAMP_URL}" crossorigin="anonymous" style="width:130px;position:absolute;bottom:130px;left:50%;transform:translateX(-50%);opacity:0.8;z-index:10;pointer-events:none;">` : '';
 
@@ -1175,7 +1171,7 @@
             document.getElementById('password-modal').classList.add('hidden');
         }
 
-        async function handlePasswordChange() {
+        async function saveNewPassword() {
             const newPwd = document.getElementById('new-password').value;
             const confirmPwd = document.getElementById('confirm-password').value;
             const errorDiv = document.getElementById('password-error');
@@ -1220,7 +1216,7 @@
             if (!clientMgmtBtn) return;
 
             try {
-                const userDocRef = doc(firestore, 'users', userEmail);
+                const userDocRef = doc(db, 'users', userEmail);
                 const userDocSnap = await getDoc(userDocRef);
 
                 const isAdmin = userDocSnap.exists() && userDocSnap.data().roli === 'admin';
@@ -1249,7 +1245,7 @@
 
                 checkAdminAccess(user.email);
 
-                if (db.length === 0) {
+                if (vertetimet.length === 0) {
                     await loadData();
                 }
                 updateDashboardCount();
@@ -1268,30 +1264,31 @@
         // Expose functions to global scope for onclick handlers
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
+        window.saveClient = saveClient;
+        window.deleteClient = deleteClient; // Crucial Fix
+        window.editClient = editClient;     // Crucial Fix
+        window.generatePDF = generatePDF;
+        window.shtoRjesht = shtoRjesht;
+        window.togglePriceInput = togglePriceInput;
+        window.openPasswordModal = openPasswordModal;
+        window.closePasswordModal = closePasswordModal;
+        window.saveNewPassword = saveNewPassword;
+        window.resetForm = resetForm;
+
         window.createNew = createNew;
         window.showClientManagement = showClientManagement;
         window.showPanicList = showPanicList;
         window.showList = showList;
         window.showDashboard = showDashboard;
-        window.saveClient = saveClient;
         window.showClientForm = showClientForm;
         window.handleSaveClient = handleSaveClient;
-        window.deleteClient = deleteClient;
         window.removeClient = removeClient;
-        window.generatePDF = generatePDF;
-        window.editClient = editClient;
         window.loadClients = loadClients;
         window.handleFuzzySearch = handleFuzzySearch;
         window.selectFuzzy = selectFuzzy;
-        window.togglePriceNA = togglePriceNA;
-        window.addNewPrepField = addNewPrepField;
         window.togglePrepRow = togglePrepRow;
         window.clearSig = clearSig;
-        window.openPasswordModal = openPasswordModal;
-        window.closePasswordModal = closePasswordModal;
-        window.handlePasswordChange = handlePasswordChange;
     </script>
 </body>
 
 </html>
-
