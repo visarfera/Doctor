@@ -87,27 +87,28 @@
 <body class="bg-white min-h-screen text-black">
     <div id="app">
         <!-- TOP NAVIGATION -->
-        <nav id="top-nav" class="hidden bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-[100] px-6 py-2">
-            <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <nav id="top-nav" class="hidden bg-white shadow-md p-3 flex justify-between items-center sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto flex justify-between items-center w-full">
                 <div class="flex items-center gap-2">
-                    <img src="https://i.imgur.com/cMRJk4p.png" crossorigin="anonymous" alt="Logo" class="h-8">
-                    <span class="text-xs font-black uppercase hidden sm:block tracking-tighter">Doctor
+                    <img src="https://i.imgur.com/cMRJk4p.png" crossorigin="anonymous" alt="Logo" class="h-8 md:h-10">
+                    <span class="text-xs font-black uppercase hidden md:block tracking-tighter">Doctor
                         Exterminator</span>
                 </div>
 
-                <div class="flex items-center space-x-2">
-                    <span id="user-email-display" class="text-xs text-gray-500 hidden md:block font-mono mr-2"></span>
+                <div class="flex items-center gap-3">
+                    <span id="user-email-display" class="text-xs text-gray-500 hidden lg:block font-mono mr-2"></span>
 
                     <button onclick="openPasswordModal()"
-                        class="text-blue-900 hover:text-blue-700 font-medium text-sm p-2 flex items-center"
+                        class="text-blue-900 hover:bg-gray-100 p-2 rounded-full transition flex items-center"
                         title="Ndrysho Fjalëkalimin">
-                        <i class="fas fa-key text-lg"></i> <span class="hidden md:inline ml-1">Fjalëkalimi</span>
+                        <i class="fas fa-key text-xl"></i> <span
+                            class="hidden md:inline ml-1 text-sm font-bold">Fjalëkalimi</span>
                     </button>
 
                     <button onclick="handleLogout()"
-                        class="text-blue-900 hover:text-blue-700 font-medium text-sm p-2 border-l border-gray-300 flex items-center"
-                        title="Dil">
-                        <i class="fas fa-sign-out-alt text-lg"></i> <span class="hidden md:inline ml-1">Dil</span>
+                        class="text-red-600 hover:bg-red-50 p-2 rounded-full transition flex items-center" title="Dil">
+                        <i class="fas fa-sign-out-alt text-xl"></i> <span
+                            class="hidden md:inline ml-1 text-sm font-bold">Dil</span>
                     </button>
                 </div>
             </div>
@@ -216,7 +217,8 @@
 
         <!-- EDIT VIEW -->
         <div id="edit-view" class="hidden bg-white min-h-screen pb-20">
-            <div class="border-b-2 border-black sticky top-0 bg-white/95 backdrop-blur-md z-10 px-6 py-4 shadow-sm">
+            <div
+                class="border-b-2 border-black sticky top-[64px] bg-white/95 backdrop-blur-md z-10 px-6 py-4 shadow-sm">
                 <div class="max-w-6xl mx-auto flex justify-between items-center">
                     <button onclick="showList()"
                         class="text-black font-black flex items-center gap-2 uppercase tracking-tight hover:underline"><i
@@ -298,11 +300,6 @@
                         <label
                             class="block text-xs font-black text-black uppercase tracking-widest border-b-2 border-black pb-2 mb-4">Dëmtuesit</label>
                         <div class="grid grid-cols-2 gap-2" id="pest-inputs"></div>
-                        <div class="mt-6">
-                            <label
-                                class="block text-xs font-black text-black uppercase tracking-widest border-b-2 border-black pb-2 mb-4">Repelimi</label>
-                            <div class="grid grid-cols-1 gap-2" id="repelimi-inputs"></div>
-                        </div>
                     </div>
                 </div>
 
@@ -398,7 +395,8 @@
 
         <!-- CLIENT MGMT VIEW -->
         <div id="clients-mgmt-view" class="hidden bg-white min-h-screen">
-            <div class="border-b-2 border-black sticky top-0 bg-white/95 backdrop-blur-md z-10 px-6 py-4 shadow-sm">
+            <div
+                class="border-b-2 border-black sticky top-[64px] bg-white/95 backdrop-blur-md z-10 px-6 py-4 shadow-sm">
                 <div class="max-w-5xl mx-auto flex justify-between items-center">
                     <button onclick="showDashboard()"
                         class="bg-black text-white px-6 py-2 rounded-xl font-bold text-sm uppercase">Kthehu</button>
@@ -461,7 +459,7 @@
 
     <!-- PASSWORD MODAL -->
     <div id="password-modal"
-        class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+        class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-3xl border-2 border-black shadow-2xl p-8">
             <h2 class="text-2xl font-black uppercase mb-6 text-center">Ndrysho Fjalëkalimin</h2>
             <div class="space-y-4">
@@ -909,20 +907,27 @@
             document.getElementById('metoda-inputs').innerHTML = METODA_TYPES.map(m => `<label class="flex items-center gap-2 p-3 border-2 border-gray-100 rounded-xl cursor-pointer bg-white hover:border-black transition-colors"><input type="checkbox" class="metoda-check w-5 h-5 accent-black" value="${m}"><span class="text-[11px] font-black uppercase select-none">${m}</span></label>`).join('');
 
             const categories = [
-                { title: "DEZINFEKTUES", list: dezinfektuesList },
-                { title: "DERATIZUES", list: deratizuesList },
-                { title: "DEZINSEKTUES", list: dezinsektuesList }
+                { title: "Dezinfektues", list: dezinfektuesList, type: 'prep' },
+                { title: "Dezinsektues", list: dezinsektuesList, type: 'prep' },
+                { title: "Repeluesit", list: repelimiList, type: 'repel' },
+                { title: "Deratizues", list: deratizuesList, type: 'prep' }
             ];
 
             document.getElementById('prep-inputs').innerHTML = categories.map(cat => `
-                <div class="col-span-full mt-4 mb-2">
-                    <span class="text-[10px] font-black text-gray-400 tracking-widest uppercase">${cat.title}</span>
-                </div>
-                ${cat.list.map(p => {
-                const sid = p.replace(/\s/g, '_');
-                return `<div class="p-3 border-2 border-gray-100 rounded-xl bg-white"><label class="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" class="prep-check w-4 h-4 accent-black" data-name="${p}" onchange="togglePrepRow('${sid}', this.checked)"><span class="text-[9px] font-black uppercase select-none">${p}</span></label>
-                    <div id="qty-row-${sid}" class="hidden gap-2"><input type="text" placeholder="Sasia" class="prep-qty p-1.5 text-xs border-2 border-gray-300 rounded w-16 font-bold"><select class="prep-unit p-1.5 text-[9px] border-2 border-gray-300 rounded font-bold flex-1">${UNIT_TYPES.map(u => `<option value="${u}">${u}</option>`).join('')}</select></div></div>`;
+                <div class="bg-gray-50/50 p-4 rounded-2xl border-2 border-transparent hover:border-black/5 transition-all">
+                    <span class="block text-[11px] font-black text-black tracking-tight mb-3 text-center border-b pb-1 border-gray-100">${cat.title}</span>
+                    <div class="grid grid-cols-1 gap-2">
+                        ${cat.list.map(p => {
+                if (cat.type === 'prep') {
+                    const sid = p.replace(/\s/g, '_');
+                    return `<div class="p-3 border-2 border-gray-100 rounded-xl bg-white shadow-sm"><label class="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" class="prep-check w-4 h-4 accent-black" data-name="${p}" onchange="togglePrepRow('${sid}', this.checked)"><span class="text-[9px] font-black uppercase select-none">${p}</span></label>
+                            <div id="qty-row-${sid}" class="hidden gap-2"><input type="text" placeholder="Sasia" class="prep-qty p-1.5 text-xs border-2 border-gray-300 rounded w-16 font-bold"><select class="prep-unit p-1.5 text-[9px] border-2 border-gray-300 rounded font-bold flex-1">${UNIT_TYPES.map(u => `<option value="${u}">${u}</option>`).join('')}</select></div></div>`;
+                } else {
+                    return `<label class="flex items-center gap-2 p-3 border-2 border-gray-100 rounded-xl cursor-pointer bg-white hover:border-black transition-colors shadow-sm"><input type="checkbox" class="repelimi-check w-4 h-4 accent-black" value="${p}"><span class="text-[9px] font-black uppercase select-none">${p}</span></label>`;
+                }
             }).join('')}
+                    </div>
+                </div>
             `).join('');
         }
         function togglePrepRow(sid, show) { const r = document.getElementById(`qty-row-${sid}`); if (r) r.style.display = show ? 'flex' : 'none'; }
