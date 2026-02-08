@@ -228,7 +228,7 @@
                         class="text-black font-black flex items-center gap-2 uppercase tracking-tight hover:underline"><i
                             class="fas fa-arrow-left"></i> Anulo</button>
                     <div class="flex items-center gap-4">
-                        <button onclick="saveData()"
+                        <button onclick="saveClient()"
                             class="bg-black text-white px-8 py-3 rounded-xl font-black shadow-lg uppercase tracking-wide flex items-center gap-2 border-b-4 border-gray-800 active:translate-y-1"><i
                                 class="fas fa-save"></i> RUAJ</button>
                     </div>
@@ -684,7 +684,7 @@
             }
         }
 
-        async function saveData() {
+        async function saveClient() {
             const preps = Array.from(document.querySelectorAll('input[name="preparati"]:checked')).map(c => {
                 const sid = c.dataset.name.replace(/\s/g, '_');
                 const row = document.getElementById(`qty-row-${sid}`);
@@ -963,12 +963,12 @@
             document.getElementById('metoda-inputs').innerHTML = METODA_TYPES.map(m => `<label class="flex items-center gap-2 p-3 border-2 border-gray-100 rounded-xl cursor-pointer bg-white hover:border-black transition-colors"><input type="checkbox" class="metoda-check w-5 h-5 accent-black" value="${m}"><span class="text-[11px] font-black uppercase select-none">${m}</span></label>`).join('');
 
             const categories = [
-                { id: "dezinsektues-container", title: "Dezinsektues", list: dezinsektuesList, type: 'prep' },
                 { id: "dezinfektues-container", title: "Dezinfektues", list: dezinfektuesList, type: 'prep' },
+                { id: "dezinsektues-container", title: "Dezinsektues", list: dezinsektuesList, type: 'prep' },
                 { id: "deratizim-container", title: "Deratizues", list: deratizuesList, type: 'prep' },
-                { id: "ngjitesat-container", title: "Ngjitësat", list: ngjitesatList, type: 'prep' },
                 { id: "repelimi-container", title: "Repeluesit", list: repelimiList, type: 'prep' },
-                { id: "llampat-container", title: "Llampat", list: llampatList, type: 'prep' }
+                { id: "llampat-container", title: "Llampat", list: llampatList, type: 'prep' },
+                { id: "ngjitesat-container", title: "Ngjitësat", list: ngjitesatList, type: 'prep' }
             ];
 
             document.getElementById('prep-inputs').innerHTML = categories.map(cat => `
@@ -1273,7 +1273,7 @@
         window.showPanicList = showPanicList;
         window.showList = showList;
         window.showDashboard = showDashboard;
-        window.saveData = saveData;
+        window.saveClient = saveClient;
         window.showClientForm = showClientForm;
         window.handleSaveClient = handleSaveClient;
         window.deleteClient = deleteClient;
