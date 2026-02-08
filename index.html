@@ -759,8 +759,15 @@
                     }
                 }
 
-                // Removed previewDoc(docData) as requested to fix ReferenceError
-                showList(); // Automatically return to list after save
+                alert("Vërtetimi u ruajt me sukses!");
+
+                // --- AUTO PREVIEW FEATURE ---
+                // Immediately open the PDF for the data we just saved
+                generatePDF(docData);
+                // ----------------------------
+
+                resetForm();
+                loadClients();
             } catch (error) {
                 console.error("Error saving:", error);
                 alert("Gabim gjatë ruajtjes: " + error.message);
