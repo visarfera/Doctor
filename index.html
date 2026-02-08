@@ -5,7 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sistemi DOCTOR EXTERMINATOR - Online</title>
+    <link rel="icon" type="image/png" href="https://i.imgur.com/phMjv7k.png">
+    <link rel="apple-touch-icon" href="https://i.imgur.com/phMjv7k.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Doctor Exterminator - Paneli</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -580,6 +584,7 @@
         let db = [];
         let clientsDb = [];
         let currentId = null;
+        let currentUserRole = 'user'; // Global role tracking
         let padTekniku, padKlienti;
 
         async function loadData() {
@@ -603,12 +608,12 @@
         function showList() {
             document.querySelectorAll('#app > div').forEach(d => d.classList.add('hidden'));
             document.getElementById('list-view').classList.remove('hidden');
-            renderList();
+            loadClients();
         }
         function showPanicList() {
             document.querySelectorAll('#app > div').forEach(d => d.classList.add('hidden'));
             document.getElementById('list-view').classList.remove('hidden');
-            renderList(true);
+            loadClients(true);
         }
         function showClientManagement() {
             document.querySelectorAll('#app > div').forEach(d => d.classList.add('hidden'));
@@ -759,7 +764,7 @@
             }
         }
 
-        async function deleteVertetim(id) {
+        async function deleteClient(id) {
             if (!confirm("Fshij këtë vërtetim?")) return;
 
             try {
@@ -769,7 +774,7 @@
                     await firebaseDeleteDoc(doc(firestore, 'clients', docToDelete.firestoreId));
                 }
                 db = db.filter(x => x.id !== id);
-                renderList();
+                loadClients();
             } catch (error) {
                 console.error("Error deleting:", error);
                 alert("Gabim gjatë fshirjes: " + error.message);
@@ -784,9 +789,9 @@
             return { seq: 0, year: 0 };
         }
 
-        function renderList(onlyExpired = false) {
-            const query = document.getElementById('search-input').value.toLowerCase();
-            let filtered = db.filter(d => d.klienti.toLowerCase().includes(query) || d.nr_v.includes(query));
+        function loadClients(onlyExpired = false) {
+            const queryValue = document.getElementById('search-input').value.toLowerCase();
+            let filtered = db.filter(d => d.klienti.toLowerCase().includes(queryValue) || d.nr_v.includes(queryValue));
             if (onlyExpired) {
                 const now = new Date();
                 filtered = filtered.filter(d => {
@@ -803,26 +808,43 @@
                 return pB.seq - pA.seq;
             });
 
-            document.getElementById('docs-list').innerHTML = filtered.map(d => {
-                const displayPrice = d.price_is_na ? 'N/A' : (d.cmimi ? `${d.cmimi} €` : '-');
-                const leshuarNga = d.leshuar_nga ? d.leshuar_nga.split('@')[0] : '-';
+            document.getElementById('docs-list').innerHTML = filtered.map(client => {
+                const id = client.id;
+                const displayPrice = client.price_is_na ? 'N/A' : (client.cmimi ? `${client.cmimi} €` : '-');
+                const leshuarNga = client.leshuar_nga ? client.leshuar_nga.split('@')[0] : '-';
+
+                let actionButtons = `
+                    <button onclick='generatePDF(${JSON.stringify(client).replace(/'/g, "&#39;")})' class="text-blue-900 hover:text-blue-700 font-medium mx-1" title="PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </button>
+                `;
+
+                if (currentUserRole === 'admin') {
+                    actionButtons += `
+                        <button onclick="editClient('${id}')" class="text-yellow-600 hover:text-yellow-800 mx-1" title="Modifiko">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteClient('${id}')" class="text-red-600 hover:text-red-800 mx-1" title="Fshije">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                }
+
                 return `
                 <tr class="border-b hover:bg-gray-50 uppercase text-[11px] font-bold">
-                    <td class="p-4"><span class="bg-black text-white px-2 py-1 rounded">${d.nr_v}</span></td>
-                    <td class="p-4">${d.klienti}</td><td class="p-4">${d.data}</td><td class="p-4">${displayPrice}</td>
+                    <td class="p-4"><span class="bg-black text-white px-2 py-1 rounded">${client.nr_v}</span></td>
+                    <td class="p-4">${client.klienti}</td><td class="p-4">${client.data}</td><td class="p-4">${displayPrice}</td>
                     <td class="p-4 text-gray-500 text-[10px]">${leshuarNga}</td>
                     <td class="p-4 text-center">
                         <div class="flex justify-center gap-3">
-                            <button onclick="previewDoc(${d.id})" class="text-blue-600 hover:scale-110 transition-transform"><i class="fas fa-file-pdf"></i></button>
-                            <button onclick="editDoc(${d.id})" class="text-amber-600 hover:scale-110 transition-transform"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteVertetim(${d.id})" class="text-red-600 hover:scale-110 transition-transform"><i class="fas fa-trash"></i></button>
+                            ${actionButtons}
                         </div>
                     </td>
                 </tr>`;
             }).join('');
         }
 
-        function editDoc(id) {
+        function editClient(id) {
             const d = db.find(x => x.id === id); if (!d) return;
             currentId = id; clearForm();
             ['data', 'ora', 'nr_v', 'klienti', 'adresa', 'nui', 'm2', 'tel', 'email', 'tekniku_emri', 'pranuesi_emri', 'shenime'].forEach(k => {
@@ -868,7 +890,7 @@
                     <div><div>${c.klienti}</div><div class="text-[10px] text-gray-500">NUI: ${c.nui} | ${c.adresa}</div></div>
                     <div class="flex gap-2">
                         <button onclick="showClientForm('${c.nui}')" class="bg-black text-white px-4 py-2 rounded-lg">EDITO</button>
-                        <button onclick="deleteClient('${c.nui}')" class="bg-red-600 text-white px-4 py-2 rounded-lg">FSHIJ</button>
+                        <button onclick="removeClient('${c.nui}')" class="bg-red-600 text-white px-4 py-2 rounded-lg">FSHIJ</button>
                     </div>
                 </div>`).join('');
         }
@@ -902,7 +924,7 @@
             }
         }
 
-        async function deleteClient(nui) {
+        async function removeClient(nui) {
             if (!confirm("Fshij klientin?")) return;
 
             try {
@@ -1025,7 +1047,7 @@
             return Promise.all(promises);
         }
 
-        function previewDoc(idOrData) {
+        function generatePDF(idOrData) {
             const d = typeof idOrData === 'object' ? idOrData : db.find(x => x.id === idOrData); if (!d) return;
             const logo = `<div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_URL}" crossorigin="anonymous" style="width:250px;display:inline-block;"></div>`;
             const stampImg = d.show_stamp !== false ? `<img src="${STAMP_URL}" crossorigin="anonymous" style="width:130px;position:absolute;bottom:130px;left:50%;transform:translateX(-50%);opacity:0.8;z-index:10;pointer-events:none;">` : '';
@@ -1199,9 +1221,16 @@
                 const userDocSnap = await getDoc(userDocRef);
 
                 const isAdmin = userDocSnap.exists() && userDocSnap.data().roli === 'admin';
+                currentUserRole = isAdmin ? 'admin' : 'user'; // Sync global role
                 clientMgmtBtn.style.display = isAdmin ? 'flex' : 'none';
+
+                // Re-render list if currently on list view to apply permission UI
+                if (!document.getElementById('list-view').classList.contains('hidden')) {
+                    loadClients();
+                }
             } catch (error) {
                 console.error('Error checking admin access:', error);
+                currentUserRole = 'user';
                 clientMgmtBtn.style.display = 'none';
             }
         }
@@ -1245,10 +1274,10 @@
         window.showClientForm = showClientForm;
         window.handleSaveClient = handleSaveClient;
         window.deleteClient = deleteClient;
-        window.previewDoc = previewDoc;
-        window.editDoc = editDoc;
-        window.deleteVertetim = deleteVertetim;
-        window.renderList = renderList;
+        window.removeClient = removeClient;
+        window.generatePDF = generatePDF;
+        window.editClient = editClient;
+        window.loadClients = loadClients;
         window.handleFuzzySearch = handleFuzzySearch;
         window.selectFuzzy = selectFuzzy;
         window.togglePriceNA = togglePriceNA;
