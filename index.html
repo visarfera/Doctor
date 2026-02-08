@@ -576,7 +576,7 @@
             "PYRETHRINS-PIPERONYL BUTOXIDE"
         ];
 
-        const FIXED_PREPS = [...dezinfektuesList, ...deratizuesList, ...dezinsektuesList, ...llampatList, ...ngjitesatList];
+        const FIXED_PREPS = [...dezinfektuesList, ...dezinsektuesList, ...deratizuesList, ...llampatList, ...ngjitesatList, ...repelimiList];
         const DEFAULT_NOTE = "Shërbimi u krye sipas standardeve dhe protokolleve ekologjike të kërkuara për trajtimin e hapësirave.";
         const LOGO_URL = 'https://i.imgur.com/cMRJk4p.png';
         const STAMP_URL = 'https://i.imgur.com/0FbFlq8.png';
@@ -969,9 +969,9 @@
                 { id: "dezinfektues-container", title: "Dezinfektues", list: dezinfektuesList, type: 'prep' },
                 { id: "dezinsektues-container", title: "Dezinsektues", list: dezinsektuesList, type: 'prep' },
                 { id: "deratizim-container", title: "Deratizues", list: deratizuesList, type: 'prep' },
-                { id: "repelimi-container", title: "Repeluesit", list: repelimiList, type: 'prep' },
                 { id: "llampat-container", title: "Llampat", list: llampatList, type: 'prep' },
-                { id: "ngjitesat-container", title: "Ngjitësat", list: ngjitesatList, type: 'prep' }
+                { id: "ngjitesat-container", title: "Ngjitësat", list: ngjitesatList, type: 'prep' },
+                { id: "repelimi-container", title: "Repeluesit", list: repelimiList, type: 'prep' }
             ];
 
             document.getElementById('prep-inputs').innerHTML = categories.map(cat => `
@@ -1089,8 +1089,6 @@
                         <div style="border:2px solid black;padding:10px;border-radius:15px;">
                             <div style="font-weight:900;font-size:11px;border-bottom:1px solid #000;margin-bottom:5px;">DËMTUESIT</div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;font-size:11px;">${demtuesit.map(p => `<div style="display:flex;align-items:center;margin-bottom:2px;"><div style="width:10px;height:10px;border:1px solid black;margin-right:5px;display:flex;align-items:center;justify-content:center;font-size:8px;">${d.pestat.includes(p) ? '✓' : ''}</div><b>${p}</b></div>`).join('')}</div>
-                            <div style="font-weight:900;font-size:11px;border-bottom:1px solid #000;margin:5px 0;">REPELIMI</div>
-                            <div style="font-size:11px;">${repelimiList.map(r => `<div style="display:flex;align-items:center;margin-bottom:2px;"><div style="width:10px;height:10px;border:1px solid black;margin-right:5px;display:flex;align-items:center;justify-content:center;font-size:8px;">${(d.repelimi && d.repelimi.includes(r)) ? '✓' : ''}</div><b>${r}</b></div>`).join('')}</div>
                         </div>
                     </div>
                     <div style="border:2px solid black;border-radius:15px;overflow:hidden;margin-bottom:6px;">
