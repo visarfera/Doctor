@@ -735,12 +735,14 @@
 
             try {
                 const existingDoc = db.find(x => x.id === currentId);
-                if (existingDoc && existingDoc.firestoreId) {
-                    await updateDoc(doc(firestore, 'clients', existingDoc.firestoreId), docData);
+                const editingId = existingDoc ? existingDoc.firestoreId : null;
+
+                if (editingId) {
+                    await updateDoc(doc(firestore, "clients", editingId), docData);
                     const idx = db.findIndex(x => x.id === currentId);
-                    db[idx] = { ...docData, firestoreId: existingDoc.firestoreId };
+                    db[idx] = { ...docData, firestoreId: editingId };
                 } else {
-                    const docRef = await addDoc(collection(firestore, 'clients'), docData);
+                    const docRef = await addDoc(collection(firestore, "clients"), docData);
                     db.push({ ...docData, firestoreId: docRef.id });
                 }
 
@@ -757,7 +759,8 @@
                     }
                 }
 
-                previewDoc(docData);
+                // Removed previewDoc(docData) as requested to fix ReferenceError
+                showList(); // Automatically return to list after save
             } catch (error) {
                 console.error("Error saving:", error);
                 alert("Gabim gjatë ruajtjes: " + error.message);
