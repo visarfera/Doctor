@@ -1089,7 +1089,11 @@
                     <div style="border:2px solid black;border-radius:15px;overflow:hidden;margin-bottom:6px;">
                         <table style="width:100%;border-collapse:collapse;font-size:8px;">
                             <tr style="background:black;color:white;font-weight:900;font-size:9px;"><th style="padding:4px;text-align:left;">PREPARATET / PAJISJET</th><th style="padding:4px;">NJËSIA</th><th style="padding:4px;">SASIA</th></tr>
-                            ${d.preparatet.map(p => `<tr style="border-top:1px solid #eee;"><td style="padding:2px 4px;font-weight:900;font-size:8px;line-height:1.1;">${p.emri}</td><td style="padding:2px;text-align:center;font-size:8px;">${p.njesia}</td><td style="padding:2px;text-align:center;font-weight:900;font-size:8px;">${p.sasia}</td></tr>`).join('')}
+                            ${d.preparatet.map(p => {
+                const sasiaVal = (p.sasia && p.sasia.toString().trim() !== "") ? p.sasia : "";
+                const njesiaVal = sasiaVal ? p.njesia : "";
+                return `<tr style="border-top:1px solid #eee;"><td style="padding:2px 4px;font-weight:900;font-size:8px;line-height:1.1;">${p.emri}</td><td style="padding:2px;text-align:center;font-size:8px;">${njesiaVal}</td><td style="padding:2px;text-align:center;font-weight:900;font-size:8px;">${sasiaVal}</td></tr>`;
+            }).join('')}
                         </table>
                     </div>
                     <div style="border:2px solid black;padding:10px;border-radius:15px;font-weight:900;margin-bottom:15px;display:flex;gap:20px;font-size:12px;">
