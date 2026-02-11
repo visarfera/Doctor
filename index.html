@@ -103,7 +103,7 @@
                     <span id="user-email-display" class="text-xs text-gray-500 hidden lg:block font-mono mr-2"></span>
 
                     <button onclick="openPasswordModal()"
-                        class="text-black hover:bg-gray-100 p-2 rounded-full transition flex items-center"
+                        class="text-blue-900 hover:bg-gray-100 p-2 rounded-full transition flex items-center"
                         title="Ndrysho Fjalëkalimin">
                         <i class="fas fa-key text-xl"></i> <span
                             class="hidden md:inline ml-1 text-sm font-bold">Fjalëkalimi</span>
@@ -319,7 +319,31 @@
                             class="text-black text-[10px] font-black uppercase hover:underline">+ Shto manual</button>
                     </div>
                     <div id="prep-inputs" class="columns-1 md:columns-2 gap-4 space-y-4 mb-4"></div>
-                    <div id="custom-prep-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                    <div id="custom-prep-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6"></div>
+
+                    <!-- MANUAL PREPARATION ENTRY -->
+                    <div class="bg-gray-50 p-6 rounded-2xl border-2 border-dashed border-black">
+                        <label class="block text-xs font-black text-black uppercase tracking-widest mb-4">Shto Preparat
+                            Tjetër (Manualisht)</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                            <input type="text" id="manual-name" placeholder="Emri i preparatit"
+                                class="sm:col-span-2 p-3 border-2 border-gray-300 rounded-xl font-bold uppercase focus:border-black outline-none">
+                            <input type="number" id="manual-qty" placeholder="Sasia"
+                                class="p-3 border-2 border-gray-300 rounded-xl font-bold focus:border-black outline-none">
+                            <select id="manual-unit"
+                                class="p-3 border-2 border-gray-300 rounded-xl font-bold focus:border-black outline-none">
+                                <option value="LITËR">LITËR</option>
+                                <option value="KILOGRAM">KILOGRAM</option>
+                                <option value="COPË">COPË</option>
+                                <option value="ML">ML</option>
+                                <option value="GRAM">GRAM</option>
+                            </select>
+                        </div>
+                        <button onclick="shtoPreparatManual()"
+                            class="mt-4 w-full bg-black text-white p-3 rounded-xl font-black uppercase shadow-lg border-b-4 border-gray-800 active:translate-y-1 transition-all">+
+                            Shto Preparatin</button>
+                        <div id="manual-preparate-list" class="mt-4 space-y-2"></div>
+                    </div>
                 </div>
 
                 <div class="pt-6 border-t-2 border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -573,6 +597,7 @@
             "PERMETHRIN",
             "IMIDACLOPRID",
             "DELTAMETHRIN",
+            "FIPRONIL",
             "PYRETHRINS-PIPERONYL BUTOXIDE"
         ];
 
@@ -1010,6 +1035,40 @@
             }
         }
         function togglePrepRow(sid, show) { const r = document.getElementById(`qty-row-${sid}`); if (r) r.style.display = show ? 'flex' : 'none'; }
+
+        function shtoPreparatManual() {
+            const name = document.getElementById('manual-name').value.trim().toUpperCase();
+            const sasia = document.getElementById('manual-qty').value.trim();
+            const njesia = document.getElementById('manual-unit').value;
+            const container = document.getElementById('manual-preparate-list');
+
+            if (!name) {
+                alert("Ju lutem shënoni emrin e preparatit!");
+                return;
+            }
+
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center p-3 bg-white border-2 border-black rounded-xl shadow-sm";
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" name="preparati" data-name="${name}" checked hidden>
+                    <div id="qty-row-${name.replace(/\s/g, '_')}" style="display:none">
+                         <input type="text" class="prep-qty" value="${sasia}">
+                         <input type="text" class="prep-unit" value="${njesia}">
+                    </div>
+                    <span class="font-black text-xs uppercase">${name} - ${sasia} ${njesia}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 transition-colors">
+                    <i class="fas fa-times-circle text-xl"></i>
+                </button>
+            `;
+            container.appendChild(div);
+
+            // Reset inputs
+            document.getElementById('manual-name').value = '';
+            document.getElementById('manual-qty').value = '';
+        }
+
         function shtoRjesht(n = "", q = "", u = "LITËR") {
             const div = document.createElement('div'); div.className = "p-3 border-2 border-gray-100 rounded-xl bg-gray-50";
             div.innerHTML = `<input type="text" class="custom-prep-name w-full p-2 text-[10px] border-2 border-gray-300 rounded mb-2 font-black uppercase" placeholder="EMRI" value="${n}"><div class="flex gap-2"><input type="text" class="custom-prep-qty p-2 text-xs border-2 border-gray-300 rounded w-16 font-bold" value="${q}"><select class="custom-prep-unit p-2 text-[9px] border-2 border-gray-300 rounded flex-1">${UNIT_TYPES.map(x => `<option value="${x}" ${u === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 px-2"><i class="fas fa-times"></i></button></div>`;
@@ -1283,6 +1342,7 @@
         window.closePasswordModal = closePasswordModal;
         window.saveNewPassword = saveNewPassword;
         window.resetForm = resetForm;
+        window.shtoPreparatManual = shtoPreparatManual;
 
         window.createNew = createNew;
         window.showClientManagement = showClientManagement;
