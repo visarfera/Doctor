@@ -794,8 +794,12 @@
                 resetForm();
                 loadClients();
             } catch (error) {
-                console.error("Error saving:", error);
-                alert("Gabim gjatë ruajtjes: " + error.message);
+                console.error("Firebase Error:", error);
+                if (error.code === 'permission-denied') {
+                    alert("Gabim Sigurie: Nuk keni leje (autorizim) për të ruajtur të dhëna. Ju lutem kontrolloni rregullat (Rules) në panelin e Firebase.");
+                } else {
+                    alert("Gabim gjatë ruajtjes: " + error.message);
+                }
             }
         }
 
