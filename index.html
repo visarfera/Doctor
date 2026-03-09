@@ -1309,20 +1309,43 @@
         // AUTH STATE OBSERVER
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // User is signed in
+                // 1. Show Dashboard, Hide Login
                 document.getElementById('login-view').classList.add('hidden');
                 document.getElementById('dashboard-view').classList.remove('hidden');
                 document.getElementById('top-nav').classList.remove('hidden');
                 document.getElementById('user-email-display').textContent = user.email;
 
-                checkAdminAccess(user.email);
+                // 2. FETCH ROLE FROM FIRESTORE (using user.uid)
+                try {
+                    const userDocRef = doc(db, "users", user.uid);
+                    const userDocSnap = await getDoc(userDocRef);
 
+                    if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        // Support both 'role' and 'roli' field names
+                        currentUserRole = userData.role || userData.roli || 'user';
+                    } else {
+                        currentUserRole = 'user'; // Default fallback
+                    }
+                } catch (error) {
+                    console.error("Error fetching user role:", error);
+                    currentUserRole = 'user';
+                }
+
+                // 3. Apply admin UI visibility based on resolved role
+                const clientMgmtBtn = document.getElementById('btn-client-mgmt');
+                if (clientMgmtBtn) {
+                    clientMgmtBtn.style.display = (currentUserRole === 'admin') ? 'flex' : 'none';
+                }
+
+                // 4. LOAD DATA *AFTER* ROLE IS SET
                 if (vertetimet.length === 0) {
                     await loadData();
                 }
                 updateDashboardCount();
             } else {
                 // User is signed out
+                currentUserRole = 'user';
                 document.getElementById('dashboard-view').classList.add('hidden');
                 document.getElementById('top-nav').classList.add('hidden');
                 document.getElementById('login-view').classList.remove('hidden');
